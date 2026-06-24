@@ -1,0 +1,400 @@
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from '@/components/ui/dropdown-menu'
+import { PlusCircle, Search, MoreHorizontal, Filter } from 'lucide-react'
+import { usePropertyType } from '@/components/PropertyTypeContext'
+
+const initialTenants = [
+  {
+    id: 'T-01711223344',
+    name: 'Abdur Rahman',
+    phone: '01711-223344',
+    nid: '1990123456789',
+    building: 'Badda Tower',
+    room: 'A-101',
+    shopName: 'Rahman Store',
+    tradeLicense: 'TR-10293847',
+    rent: 15000,
+    advance: 30000,
+    entryDate: '2023-01-01',
+    gasCardNo: 'G-778899',
+    electricityCardNo: 'E-112233',
+    status: 'Paid',
+    type: 'House',
+  },
+  {
+    id: 'T-01822334455',
+    name: 'Rafiqul Islam',
+    phone: '01822-334455',
+    nid: '1985987654321',
+    building: 'Mirpur Villa',
+    room: 'B-205',
+    shopName: 'Rafiq Electronics',
+    tradeLicense: 'TR-56473829',
+    rent: 10000,
+    advance: 20000,
+    entryDate: '2023-06-15',
+    gasCardNo: 'G-445566',
+    electricityCardNo: 'E-445566',
+    status: 'Due',
+    type: 'Shop',
+  },
+]
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+
+import { useState, useEffect } from 'react'
+import { Copy, KeyRound, CheckCircle2 } from 'lucide-react'
+
+export default function TenantsPage() {
+  const { propertyType } = usePropertyType()
+  const isShop = propertyType === 'Shop'
+  
+  const [tenantsList, setTenantsList] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  
+  const [loginCreds, setLoginCreds] = useState<{id: string, pass: string, name: string} | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [tenantToDelete, setTenantToDelete] = useState<{id: string, name: string} | null>(null)
+
+  const fetchTenants = async () => {
+    try {
+      const res = await fetch('/api/tenants')
+      if (res.ok) {
+        setTenantsList(await res.json())
+      }
+    } catch (error) {
+      console.error('Failed to fetch tenants:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTenants()
+  }, [])
+
+  const generateLogin = (tenantId: string, tenantName: string) => {
+    const password = Math.random().toString(36).slice(-8)
+    setLoginCreds({ id: tenantId, pass: password, name: tenantName })
+    setCopied(false)
+  }
+
+  const copyCreds = () => {
+    if (loginCreds) {
+      navigator.clipboard.writeText(`Login URL: http://localhost:3000\nTenant ID: ${loginCreds.id}\nPassword: ${loginCreds.pass}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (tenantToDelete) {
+      try {
+        const res = await fetch(`/api/tenants/${tenantToDelete.id}`, { method: 'DELETE' })
+        if (res.ok) {
+          setTenantToDelete(null)
+          fetchTenants()
+        }
+      } catch (error) {
+        console.error('Failed to delete tenant:', error)
+      }
+    }
+  }
+
+  if (isLoading) return <div>Loading tenants...</div>
+
+  const displayTenants = propertyType === 'Shop' 
+    ? tenantsList.filter(t => t.type === 'Shop' || !t.type)
+    : tenantsList.filter(t => t.type === 'House' || !t.type)
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{propertyType} Tenants</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Manage your {propertyType.toLowerCase()} tenants, view details, and track their status.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={!!tenantToDelete} onOpenChange={(open) => !open && setTenantToDelete(null)}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Delete Tenant</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove <strong>{tenantToDelete?.name}</strong>? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-4 flex gap-2">
+                <Button variant="outline" onClick={() => setTenantToDelete(null)}>Cancel</Button>
+                <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Login Creds Popup Dialog */}
+          <Dialog open={!!loginCreds} onOpenChange={(open) => !open && setLoginCreds(null)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-green-600" />
+                  Generated Login Credentials
+                </DialogTitle>
+                <DialogDescription>
+                  Share these login details securely with {loginCreds?.name}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-4 py-4">
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 font-mono text-sm border border-gray-200 dark:border-gray-800">
+                  <div><span className="text-gray-500">Tenant ID:</span> <span className="font-bold">{loginCreds?.id}</span></div>
+                  <div className="mt-2"><span className="text-gray-500">Password:</span> <span className="font-bold text-green-600 dark:text-green-500">{loginCreds?.pass}</span></div>
+                </div>
+                <Button onClick={copyCreds} variant="outline" className="w-full flex items-center justify-center gap-2">
+                  {copied ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? 'Copied to Clipboard' : 'Copy Credentials'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Tenant
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New {propertyType} Tenant</DialogTitle>
+                <DialogDescription>
+                  Enter the tenant details below. Click save when you're done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input id="name" placeholder="Abdur Rahman" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input id="phone" placeholder="01711-223344" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nid">NID Number</Label>
+                    <Input id="nid" placeholder="1990123456789" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="entryDate">Entry Date</Label>
+                    <Input id="entryDate" type="date" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="property">Property</Label>
+                    <Input id="property" placeholder="e.g. Badda Tower" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">{isShop ? 'Shop No' : 'Room No'}</Label>
+                    <Input id="unit" placeholder={isShop ? 'e.g. Shop-12' : 'e.g. A-101'} />
+                  </div>
+                </div>
+
+                {isShop && (
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800">
+                    <div className="space-y-2">
+                      <Label htmlFor="shopName">Shop Name</Label>
+                      <Input id="shopName" placeholder="Rahman Store" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tradeLicense">Trade License No</Label>
+                      <Input id="tradeLicense" placeholder="TR-123456" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rent">Monthly Rent (৳)</Label>
+                    <Input id="rent" type="number" placeholder="15000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="advance">Advance Payment (৳)</Label>
+                    <Input id="advance" type="number" placeholder="30000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gasCard">Gas Card No (Optional)</Label>
+                    <Input id="gasCard" placeholder="G-123456" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="electricityCard">Electricity Card No (Optional)</Label>
+                    <Input id="electricityCard" placeholder="E-123456" />
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="document">Upload Document (NID / Passport / Image)</Label>
+                  <Input id="document" type="file" accept="image/*,.pdf" className="cursor-pointer" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">Save Tenant</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <Card className="border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="text-lg">All {propertyType} Tenants</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  type="search"
+                  placeholder="Search by name or phone..."
+                  className="pl-8 w-full sm:w-[250px] bg-gray-50 dark:bg-gray-900"
+                />
+              </div>
+              <Button variant="outline" size="icon" className="shrink-0">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
+                <TableRow>
+                  <TableHead>Tenant Info</TableHead>
+                  <TableHead>Contact</TableHead>
+                  {propertyType === 'Shop' ? (
+                    <TableHead>Shop Details</TableHead>
+                  ) : (
+                    <TableHead>Room Details</TableHead>
+                  )}
+                  <TableHead>Financials</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {displayTenants.map((tenant, idx) => (
+                  <TableRow key={`${tenant._id}-${idx}`} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <TableCell>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {tenant.name}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        ID: {tenant._id}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">{tenant.phone}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">NID: {tenant.nid}</div>
+                    </TableCell>
+                    <TableCell>
+                      {propertyType === 'Shop' ? (
+                        <>
+                          <div className="text-sm font-medium">{tenant.shopName}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Lic: {tenant.tradeLicense}</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm font-medium">{tenant.room}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{tenant.building}</div>
+                        </>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">৳ {tenant.rent?.toLocaleString()} /mo</div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Adv: ৳ {tenant.advance?.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          tenant.status === 'Paid'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : tenant.status === 'Due'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                        }`}
+                      >
+                        {tenant.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 outline-none">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => generateLogin(tenant._id, tenant.name)}>
+                              Generate Login Info
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>View Profile</DropdownMenuItem>
+                            <DropdownMenuItem>Edit Tenant</DropdownMenuItem>
+                            <DropdownMenuItem>Add Payment</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => setTenantToDelete({ id: tenant._id, name: tenant.name })}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
