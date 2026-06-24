@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,7 +10,47 @@ import { Label } from '@/components/ui/label'
 import { Building2, User } from 'lucide-react'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [loginType, setLoginType] = useState<'landlord' | 'tenant'>('landlord')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (loginType === 'landlord') {
+          if (data.user.role === 'landlord') {
+            router.push('/dashboard')
+          } else {
+            setError('Please login at /mahtab')
+          }
+        } else {
+          // tenant logic goes here
+          router.push('/tenant-portal')
+        }
+      } else {
+        setError(data.error || 'Login failed')
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -61,52 +102,49 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           
-          <CardContent className="space-y-4">
-            {loginType === 'landlord' ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="landlord@example.com" defaultValue="landlord@example.com" />
+          <form onSubmit={handleLogin}>
+            <CardContent className="space-y-4">
+              {error && (
+                <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm text-center">
+                  {error}
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link href="#" className="text-sm font-medium text-green-600 hover:text-green-500">
-                      Forgot password?
-                    </Link>
+              )}
+              {loginType === 'landlord' ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username / ID</Label>
+                    <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="landlord_id" required />
                   </div>
-                  <Input id="password" type="password" defaultValue="password123" />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="tenantId">Tenant ID</Label>
-                  <Input id="tenantId" placeholder="e.g. T-01711223344" defaultValue="T-01711223344" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tenantPassword">Password</Label>
-                  <Input id="tenantPassword" type="password" defaultValue="secret123" />
-                </div>
-              </>
-            )}
-          </CardContent>
-          
-          <CardFooter>
-            {loginType === 'landlord' ? (
-              <Link href="/dashboard" className="w-full">
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                  Landlord Sign In
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/tenant-portal" className="w-full">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  Tenant Sign In
-                </Button>
-              </Link>
-            )}
-          </CardFooter>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <Link href="#" className="text-sm font-medium text-green-600 hover:text-green-500">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="tenantId">Tenant ID</Label>
+                    <Input id="tenantId" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. T-01711223344" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tenantPassword">Password</Label>
+                    <Input id="tenantPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  </div>
+                </>
+              )}
+            </CardContent>
+            
+            <CardFooter>
+              <Button type="submit" disabled={loading} className={`w-full text-white ${loginType === 'landlord' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                {loading ? 'Signing In...' : (loginType === 'landlord' ? 'Landlord Sign In' : 'Tenant Sign In')}
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </div>

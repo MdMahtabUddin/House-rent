@@ -36,11 +36,9 @@ export function Header() {
         <span className="sr-only">Toggle notifications</span>
       </Button>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
-            <User className="h-5 w-5" />
-            <span className="sr-only">Toggle user menu</span>
-          </Button>
+        <DropdownMenuTrigger render={<Button variant="secondary" size="icon" className="rounded-full" />}>
+          <User className="h-5 w-5" />
+          <span className="sr-only">Toggle user menu</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>

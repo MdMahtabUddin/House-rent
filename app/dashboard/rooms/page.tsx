@@ -127,11 +127,9 @@ export default function RoomsPage() {
           </div>
 
           <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add {unitName}
-              </Button>
+            <DialogTrigger render={<Button className="bg-green-600 hover:bg-green-700 text-white" />}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add {unitName}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -199,10 +197,8 @@ export default function RoomsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <DialogClose asChild>
-                  <Button onClick={handleAddFlat} className="bg-green-600 hover:bg-green-700 text-white">
-                    Save {unitName}
-                  </Button>
+                <DialogClose render={<Button onClick={handleAddFlat} className="bg-green-600 hover:bg-green-700 text-white" />}>
+                  Save {unitName}
                 </DialogClose>
               </DialogFooter>
             </DialogContent>

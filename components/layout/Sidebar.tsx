@@ -25,14 +25,17 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { propertyType, setPropertyType } = usePropertyType()
+  const { propertyType, setPropertyType, userAccess } = usePropertyType()
 
   return (
     <div className="hidden border-r bg-gray-50/40 lg:block dark:bg-gray-800/40 lg:w-64">
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <DropdownMenu>
-            <DropdownMenuTrigger className="w-full flex items-center justify-between px-4 py-2 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md outline-none">
+            <DropdownMenuTrigger 
+              disabled={!userAccess || (!userAccess.house || !userAccess.shop)}
+              className="w-full flex items-center justify-between px-4 py-2 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md outline-none disabled:opacity-80 disabled:cursor-default"
+            >
               <div className="flex items-center gap-2">
                 {propertyType === 'House' ? (
                   <Home className="h-5 w-5 text-green-600" />
@@ -41,18 +44,22 @@ export function Sidebar() {
                 )}
                 <span>{propertyType} Rent</span>
               </div>
-              <ChevronsUpDown className="h-4 w-4 text-gray-500" />
+              {userAccess?.house && userAccess?.shop && (
+                <ChevronsUpDown className="h-4 w-4 text-gray-500" />
+              )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[200px]">
-              <DropdownMenuItem onClick={() => setPropertyType('House')} className="cursor-pointer">
-                <Home className="mr-2 h-4 w-4 text-green-600" />
-                <span>House Rent</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setPropertyType('Shop')} className="cursor-pointer">
-                <Store className="mr-2 h-4 w-4 text-blue-600" />
-                <span>Shop Rent</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
+            {userAccess?.house && userAccess?.shop && (
+              <DropdownMenuContent align="start" className="w-[200px]">
+                <DropdownMenuItem onClick={() => setPropertyType('House')} className="cursor-pointer">
+                  <Home className="mr-2 h-4 w-4 text-green-600" />
+                  <span>House Rent</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPropertyType('Shop')} className="cursor-pointer">
+                  <Store className="mr-2 h-4 w-4 text-blue-600" />
+                  <span>Shop Rent</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            )}
           </DropdownMenu>
         </div>
         <div className="flex-1 overflow-auto py-2">

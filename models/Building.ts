@@ -1,10 +1,19 @@
 import mongoose from 'mongoose';
 
-const BuildingSchema = new mongoose.Schema({
+export interface IBuilding extends mongoose.Document {
+  name: string;
+  type: string;
+  rooms: number;
+  status: string;
+  landlordId: mongoose.Types.ObjectId;
+}
+
+const BuildingSchema = new mongoose.Schema<IBuilding>({
   name: { type: String, required: true },
   type: { type: String, required: true },
   rooms: { type: Number, required: true },
   status: { type: String, required: true, default: 'Active' },
+  landlordId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
 
-export default mongoose.models.Building || mongoose.model('Building', BuildingSchema);
+export default mongoose.models.Building || mongoose.model<IBuilding>('Building', BuildingSchema);

@@ -92,11 +92,9 @@ export default function BuildingsPage() {
           <p className="text-sm text-gray-500">Manage your properties and buildings.</p>
         </div>
         <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Building
-            </Button>
+          <DialogTrigger render={<Button className="bg-green-600 hover:bg-green-700 text-white" />}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Building
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -139,13 +137,8 @@ export default function BuildingsPage() {
               </div>
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button 
-                  onClick={handleAddBuilding} 
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Save Building
-                </Button>
+              <DialogClose render={<Button onClick={handleAddBuilding} className="bg-green-600 hover:bg-green-700 text-white" />}>
+                Save Building
               </DialogClose>
             </DialogFooter>
           </DialogContent>

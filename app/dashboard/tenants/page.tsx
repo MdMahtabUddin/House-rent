@@ -189,11 +189,9 @@ export default function TenantsPage() {
           </Dialog>
 
           <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Tenant
-              </Button>
+            <DialogTrigger render={<Button className="bg-green-600 hover:bg-green-700 text-white" />}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Tenant
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
