@@ -296,7 +296,7 @@ export default function TenantsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="rounded-md border border-gray-100 dark:border-gray-800 overflow-x-auto">
             <Table>
               <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
                 <TableRow>
