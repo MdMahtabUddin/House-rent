@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [buildings, setBuildings] = useState<any[]>([])
   const [flats, setFlats] = useState<any[]>([])
   const [tenants, setTenants] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
 
   useEffect(() => {
     setIsMounted(true)
@@ -58,14 +59,16 @@ export default function DashboardPage() {
     // Fetch real stats
     const fetchDashboardData = async () => {
       try {
-        const [bRes, fRes, tRes] = await Promise.all([
+        const [bRes, fRes, tRes, pRes] = await Promise.all([
           fetch('/api/buildings'),
           fetch('/api/flats'),
-          fetch('/api/tenants')
+          fetch('/api/tenants'),
+          fetch('/api/payments')
         ])
         if (bRes.ok) setBuildings(await bRes.json())
         if (fRes.ok) setFlats(await fRes.json())
         if (tRes.ok) setTenants(await tRes.json())
+        if (pRes.ok) setPayments(await pRes.json())
       } catch (err) {
         console.error('Failed to load dashboard stats', err)
       }
@@ -78,9 +81,17 @@ export default function DashboardPage() {
   if (!isMounted) return null
 
   const emptyFlats = flats.filter(f => f.status === 'Empty')
-  const totalIncome = tenants.reduce((acc, curr) => acc + (curr.rent || 0), 0)
-  const duePayments = tenants.filter(t => t.status === 'Due')
-  const totalDueAmount = duePayments.reduce((acc, curr) => acc + (curr.rent || 0), 0)
+  
+  // Calculate from real Payments
+  const currentMonth = new Date().toLocaleString('en-US', { month: 'long' })
+  const thisMonthPayments = payments.filter(p => p.month === currentMonth)
+  
+  // Total Income this month
+  const totalIncome = thisMonthPayments.reduce((acc, curr) => acc + (curr.paidAmount || 0), 0)
+  
+  // Due payments total
+  const duePayments = payments.filter(p => p.status === 'Due' || p.status === 'Partial')
+  const totalDueAmount = duePayments.reduce((acc, curr) => acc + (curr.dueAmount || 0), 0)
 
   // Calculate Building Occupancy dynamically
   const buildingStats = buildings.map(b => {
