@@ -84,23 +84,71 @@ export default function TenantsPage() {
   const [loginCreds, setLoginCreds] = useState<{id: string, pass: string, name: string} | null>(null)
   const [copied, setCopied] = useState(false)
   const [tenantToDelete, setTenantToDelete] = useState<{id: string, name: string} | null>(null)
+  
+  const [buildingsList, setBuildingsList] = useState<any[]>([])
+  const [newTenant, setNewTenant] = useState({
+    name: '',
+    phone: '',
+    nid: '',
+    entryDate: '',
+    building: '',
+    room: '',
+    shopName: '',
+    tradeLicense: '',
+    rent: 0,
+    advance: 0,
+    gasCardNo: '',
+    electricityCardNo: '',
+  })
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
-  const fetchTenants = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch('/api/tenants')
-      if (res.ok) {
-        setTenantsList(await res.json())
-      }
+      const [tRes, bRes] = await Promise.all([
+        fetch('/api/tenants'),
+        fetch('/api/buildings')
+      ])
+      if (tRes.ok) setTenantsList(await tRes.json())
+      if (bRes.ok) setBuildingsList(await bRes.json())
     } catch (error) {
-      console.error('Failed to fetch tenants:', error)
+      console.error('Failed to fetch data:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchTenants()
+    fetchData()
   }, [])
+
+  const handleAddTenant = async () => {
+    if (!newTenant.name || !newTenant.building || !newTenant.room) {
+      alert('Please fill required fields (Name, Building, Room/Shop)')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newTenant,
+          type: propertyType
+        })
+      })
+      if (res.ok) {
+        setIsAddDialogOpen(false)
+        setNewTenant({
+          name: '', phone: '', nid: '', entryDate: '', building: '', room: '', shopName: '', tradeLicense: '', rent: 0, advance: 0, gasCardNo: '', electricityCardNo: ''
+        })
+        fetchData()
+      } else {
+        alert('Failed to add tenant')
+      }
+    } catch (error) {
+      console.error('Error adding tenant:', error)
+    }
+  }
 
   const generateLogin = (tenantId: string, tenantName: string) => {
     const password = Math.random().toString(36).slice(-8)
@@ -122,7 +170,7 @@ export default function TenantsPage() {
         const res = await fetch(`/api/tenants/${tenantToDelete.id}`, { method: 'DELETE' })
         if (res.ok) {
           setTenantToDelete(null)
-          fetchTenants()
+          fetchData()
         }
       } catch (error) {
         console.error('Failed to delete tenant:', error)
@@ -191,7 +239,7 @@ export default function TenantsPage() {
               </DialogContent>
             </Dialog>
 
-            <Dialog>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-white text-rose-600 hover:bg-rose-50 rounded-full font-semibold shadow-md hover:shadow-lg transition-all h-11 px-6 w-full sm:w-auto">
                   <PlusCircle className="mr-2 h-5 w-5" />
@@ -208,31 +256,41 @@ export default function TenantsPage() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" placeholder="Abdur Rahman" />
+                      <Label htmlFor="name">Full Name *</Label>
+                      <Input id="name" placeholder="Abdur Rahman" value={newTenant.name} onChange={e => setNewTenant({...newTenant, name: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="01711-223344" />
+                      <Input id="phone" placeholder="01711-223344" value={newTenant.phone} onChange={e => setNewTenant({...newTenant, phone: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="nid">NID Number</Label>
-                      <Input id="nid" placeholder="1990123456789" />
+                      <Input id="nid" placeholder="1990123456789" value={newTenant.nid} onChange={e => setNewTenant({...newTenant, nid: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="entryDate">Entry Date</Label>
-                      <Input id="entryDate" type="date" />
+                      <Input id="entryDate" type="date" value={newTenant.entryDate} onChange={e => setNewTenant({...newTenant, entryDate: e.target.value})} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="property">Property</Label>
-                      <Input id="property" placeholder="e.g. Badda Tower" />
+                      <Label htmlFor="property">Property *</Label>
+                      <select 
+                        id="property" 
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 dark:border-gray-800 dark:bg-gray-950"
+                        value={newTenant.building}
+                        onChange={(e) => setNewTenant({...newTenant, building: e.target.value})}
+                      >
+                        <option value="" disabled>Select a building</option>
+                        {buildingsList.map(b => (
+                          <option key={b.name} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="unit">{isShop ? 'Shop No' : 'Room No'}</Label>
-                      <Input id="unit" placeholder={isShop ? 'e.g. Shop-12' : 'e.g. A-101'} />
+                      <Label htmlFor="unit">{isShop ? 'Shop No' : 'Room No'} *</Label>
+                      <Input id="unit" placeholder={isShop ? 'e.g. Shop-12' : 'e.g. A-101'} value={newTenant.room} onChange={e => setNewTenant({...newTenant, room: e.target.value})} />
                     </div>
                   </div>
 
@@ -240,11 +298,11 @@ export default function TenantsPage() {
                     <div className="grid grid-cols-2 gap-4 p-4 bg-rose-50/50 dark:bg-rose-900/10 rounded-lg border border-rose-100 dark:border-rose-800">
                       <div className="space-y-2">
                         <Label htmlFor="shopName">Shop Name</Label>
-                        <Input id="shopName" placeholder="Rahman Store" />
+                        <Input id="shopName" placeholder="Rahman Store" value={newTenant.shopName} onChange={e => setNewTenant({...newTenant, shopName: e.target.value})} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="tradeLicense">Trade License No</Label>
-                        <Input id="tradeLicense" placeholder="TR-123456" />
+                        <Input id="tradeLicense" placeholder="TR-123456" value={newTenant.tradeLicense} onChange={e => setNewTenant({...newTenant, tradeLicense: e.target.value})} />
                       </div>
                     </div>
                   )}
@@ -252,29 +310,24 @@ export default function TenantsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="rent">Monthly Rent (৳)</Label>
-                      <Input id="rent" type="number" placeholder="15000" />
+                      <Input id="rent" type="number" placeholder="15000" value={newTenant.rent || ''} onChange={e => setNewTenant({...newTenant, rent: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="advance">Advance Payment (৳)</Label>
-                      <Input id="advance" type="number" placeholder="30000" />
+                      <Input id="advance" type="number" placeholder="30000" value={newTenant.advance || ''} onChange={e => setNewTenant({...newTenant, advance: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gasCard">Gas Card No (Optional)</Label>
-                      <Input id="gasCard" placeholder="G-123456" />
+                      <Input id="gasCard" placeholder="G-123456" value={newTenant.gasCardNo} onChange={e => setNewTenant({...newTenant, gasCardNo: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="electricityCard">Electricity Card No (Optional)</Label>
-                      <Input id="electricityCard" placeholder="E-123456" />
+                      <Input id="electricityCard" placeholder="E-123456" value={newTenant.electricityCardNo} onChange={e => setNewTenant({...newTenant, electricityCardNo: e.target.value})} />
                     </div>
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <Label htmlFor="document">Upload Document (NID / Passport / Image)</Label>
-                    <Input id="document" type="file" accept="image/*,.pdf" className="cursor-pointer" />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white w-full">Save Tenant</Button>
+                  <Button onClick={handleAddTenant} className="bg-rose-600 hover:bg-rose-700 text-white w-full">Save Tenant</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

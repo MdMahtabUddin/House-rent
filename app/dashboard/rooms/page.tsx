@@ -34,6 +34,7 @@ export default function RoomsPage() {
 
   const [flats, setFlats] = useState<any[]>([])
   const [buildingsList, setBuildingsList] = useState<{name: string}[]>([])
+  const [tenantsList, setTenantsList] = useState<any[]>([])
   const [selectedBuildingFilter, setSelectedBuildingFilter] = useState('All')
   const [isLoading, setIsLoading] = useState(true)
   
@@ -49,6 +50,11 @@ export default function RoomsPage() {
       const bldgsRes = await fetch('/api/buildings')
       if (bldgsRes.ok) {
         setBuildingsList(await bldgsRes.json())
+      }
+
+      const tenantsRes = await fetch('/api/tenants')
+      if (tenantsRes.ok) {
+        setTenantsList(await tenantsRes.json())
       }
     } catch (error) {
       console.error('Failed to fetch data:', error)
@@ -243,6 +249,23 @@ export default function RoomsPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                 {room.building}
               </p>
+
+              {(room.status === 'Occupied' || room.status === 'rented') && (
+                <div className="mt-4 p-3 bg-teal-50 dark:bg-teal-950/30 rounded-lg border border-teal-100 dark:border-teal-900/50">
+                  {(() => {
+                    const tenant = tenantsList.find(t => t.room === room.name && t.building === room.building)
+                    return tenant ? (
+                      <div>
+                        <div className="text-xs text-teal-600 dark:text-teal-400 font-semibold mb-1 uppercase tracking-wider">Current Tenant</div>
+                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{tenant.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tenant.phone}</div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 italic">Tenant data missing</div>
+                    )
+                  })()}
+                </div>
+              )}
               
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div className="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400 mb-1">Monthly Rent</div>
