@@ -395,7 +395,7 @@ export default function TenantDashboard() {
                   <Label htmlFor="newId">New Login ID</Label>
                   <Input 
                     id="newId" 
-                    placeholder="e.g. abdur123" 
+                    placeholder="e.g. mahtab123" 
                     value={newLoginId} 
                     onChange={(e) => setNewLoginId(e.target.value)} 
                     required 

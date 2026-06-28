@@ -14,9 +14,20 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { SidebarContent } from '@/components/layout/Sidebar'
+import { useRouter } from 'next/navigation'
 
 export function Header() {
   const [open, setOpen] = useState(false)
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/')
+    } catch (err) {
+      console.error('Logout failed', err)
+    }
+  }
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-gray-50/40 px-4 lg:h-[60px] lg:px-6 dark:bg-gray-800/40">
@@ -48,17 +59,17 @@ export function Header() {
         <span className="sr-only">Toggle notifications</span>
       </Button>
       <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="secondary" size="icon" className="rounded-full" />}>
+        <DropdownMenuTrigger render={<Button variant="secondary" size="icon" className="rounded-full cursor-pointer" />}>
           <User className="h-5 w-5" />
           <span className="sr-only">Toggle user menu</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Settings</DropdownMenuItem>
-          <DropdownMenuItem>Support</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard/settings')}>Settings</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer">Support</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Logout</DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer text-red-600 font-bold" onClick={handleLogout}>Logout</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

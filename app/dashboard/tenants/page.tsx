@@ -338,7 +338,7 @@ export default function TenantsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name *</Label>
-                      <Input id="name" placeholder="Abdur Rahman" value={newTenant.name} onChange={e => setNewTenant({...newTenant, name: e.target.value})} />
+                      <Input id="name" placeholder="Mahtab" value={newTenant.name} onChange={e => setNewTenant({...newTenant, name: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>

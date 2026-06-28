@@ -30,7 +30,7 @@ export default function TenantLayout({
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
             <User className="h-4 w-4" />
-            <span>Abdur Rahman</span>
+            <span>Mahtab</span>
           </div>
           <Link href="/">
             <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
