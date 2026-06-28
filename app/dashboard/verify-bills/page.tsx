@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { CheckSquare, XCircle, Search, Filter, CheckCircle2, PlusCircle } from 'lucide-react'
+import { CheckSquare, XCircle, CheckCircle2, PlusCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import {
   Table,
@@ -25,12 +25,13 @@ import {
   DialogClose
 } from '@/components/ui/dialog'
 import { usePropertyType } from '@/components/PropertyTypeContext'
+import { DownloadReceiptButton } from '@/components/DownloadReceiptButton'
 
 export default function VerifyBillsPage() {
   const { propertyType } = usePropertyType()
-  const isShop = propertyType === 'Shop'
   
   const [tenants, setTenants] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const [newBill, setNewBill] = useState({
@@ -43,8 +44,13 @@ export default function VerifyBillsPage() {
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/tenants')
-      if (res.ok) setTenants(await res.json())
+      const [tenantsRes, paymentsRes] = await Promise.all([
+        fetch('/api/tenants'),
+        fetch('/api/payments')
+      ])
+      
+      if (tenantsRes.ok) setTenants(await tenantsRes.json())
+      if (paymentsRes.ok) setPayments(await paymentsRes.json())
     } catch (error) {
       console.error('Failed to fetch data:', error)
     } finally {
@@ -89,6 +95,7 @@ export default function VerifyBillsPage() {
           gasAmount: 0,
           electricityAmount: 0,
         })
+        fetchData()
         alert('Utility bill added successfully!')
       }
     } catch (error) {
@@ -96,9 +103,28 @@ export default function VerifyBillsPage() {
     }
   }
 
+  const handleVerify = async (paymentId: string, action: 'Approve' | 'Reject') => {
+    try {
+      const status = action === 'Approve' ? 'Paid' : 'Due'
+      const res = await fetch(`/api/payments/${paymentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      if (res.ok) {
+        fetchData()
+        alert(`Bill has been ${action.toLowerCase()}d successfully.`)
+      }
+    } catch (error) {
+      console.error('Failed to verify bill', error)
+    }
+  }
+
   const activeTenants = propertyType === 'Shop'
     ? tenants.filter(t => t.type === 'Shop' || !t.type)
     : tenants.filter(t => t.type === 'House' || !t.type)
+
+  const pendingBills = payments.filter(p => p.status === 'Pending' && (propertyType === 'Shop' ? p.type === 'Shop' : p.type === 'House'))
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -203,20 +229,106 @@ export default function VerifyBillsPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500">
-            <div className="relative">
-              <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full"></div>
-              <div className="relative p-6 bg-green-50 dark:bg-green-900/20 rounded-full mb-6 border border-green-100 dark:border-green-800/50">
-                <CheckCircle2 className="h-16 w-16 text-green-500 drop-shadow-md" />
+        <CardContent className="pt-6">
+          {pendingBills.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full"></div>
+                <div className="relative p-6 bg-green-50 dark:bg-green-900/20 rounded-full mb-6 border border-green-100 dark:border-green-800/50">
+                  <CheckCircle2 className="h-16 w-16 text-green-500 drop-shadow-md" />
+                </div>
               </div>
+              <h3 className="font-extrabold text-2xl text-gray-900 dark:text-gray-100 mb-2">You're all caught up!</h3>
+              <p className="text-base max-w-sm mx-auto">There are no pending bills submitted by tenants waiting for your verification at this time.</p>
             </div>
-            <h3 className="font-extrabold text-2xl text-gray-900 dark:text-gray-100 mb-2">You're all caught up!</h3>
-            <p className="text-base max-w-sm mx-auto">There are no pending bills submitted by tenants waiting for your verification at this time.</p>
-          </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-gray-50/80 dark:bg-gray-900/50">
+                  <TableRow>
+                    <TableHead>Tenant</TableHead>
+                    <TableHead>Month</TableHead>
+                    <TableHead>Total Paid</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingBills.map(bill => (
+                    <TableRow key={bill._id}>
+                      <TableCell>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{bill.tenantName}</div>
+                        <div className="text-xs text-gray-500">{bill.room}, {bill.building}</div>
+                      </TableCell>
+                      <TableCell>{bill.month} {bill.year}</TableCell>
+                      <TableCell className="font-semibold text-green-600">৳ {bill.paidAmount}</TableCell>
+                      <TableCell>{bill.paymentMethod}</TableCell>
+                      <TableCell>{bill.paymentDate}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                            onClick={() => handleVerify(bill._id, 'Approve')}
+                          >
+                            <CheckSquare className="w-4 h-4 mr-1" /> Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="bg-red-50 text-red-700 hover:bg-red-100 border-red-200"
+                            onClick={() => handleVerify(bill._id, 'Reject')}
+                          >
+                            <XCircle className="w-4 h-4 mr-1" /> Reject
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Show Recently Paid Bills too so they can download PDF */}
+      <Card className="border border-gray-200/50 dark:border-gray-800/50 shadow-md bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl rounded-2xl overflow-hidden mt-4">
+        <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
+          <CardTitle className="text-lg">Recent Verified Payments</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+           <Table>
+            <TableHeader className="bg-gray-50/80 dark:bg-gray-900/50">
+              <TableRow>
+                <TableHead>Tenant</TableHead>
+                <TableHead>Month</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Receipt</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {payments.filter(p => p.status === 'Paid' && (propertyType === 'Shop' ? p.type === 'Shop' : p.type === 'House')).slice(0, 10).map(bill => (
+                <TableRow key={bill._id}>
+                  <TableCell>
+                    <div className="font-medium">{bill.tenantName}</div>
+                    <div className="text-xs text-gray-500">{bill.room}</div>
+                  </TableCell>
+                  <TableCell>{bill.month} {bill.year}</TableCell>
+                  <TableCell className="font-semibold text-green-600">৳ {bill.paidAmount > 0 ? bill.paidAmount : bill.dueAmount}</TableCell>
+                  <TableCell>{bill.paymentDate || 'N/A'}</TableCell>
+                  <TableCell className="text-right">
+                    <DownloadReceiptButton payment={bill} iconOnly={true} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
   )
 }
-

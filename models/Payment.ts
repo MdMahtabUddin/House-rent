@@ -14,7 +14,7 @@ const PaymentSchema = new mongoose.Schema({
   paidAmount: { type: Number, default: 0 },
   dueAmount: { type: Number, default: 0 },
   paymentDate: { type: String }, // e.g. "2026-05-02"
-  status: { type: String, enum: ['Paid', 'Partial', 'Due'], default: 'Due' },
+  status: { type: String, enum: ['Paid', 'Partial', 'Due', 'Pending', 'Rejected'], default: 'Due' },
   paymentMethod: { type: String, enum: ['Cash', 'bKash', 'Bank', 'Other'], default: 'Cash' }
 }, { timestamps: true });
 
