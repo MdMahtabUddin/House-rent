@@ -152,12 +152,11 @@ export default function TenantsPage() {
 
   const generateLogin = async (tenantId: string, tenantName: string, tenantPhone: string) => {
     try {
-      // Create loginId: first name + last 3 digits of phone
-      const firstName = (tenantName || 'user').split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Create loginId: tenant's mobile number
       const phoneStr = tenantPhone || '';
       const phoneDigits = phoneStr.replace(/\D/g, ''); // remove non-digits
-      const last3Phone = phoneDigits.length >= 3 ? phoneDigits.slice(-3) : Math.floor(Math.random() * 900 + 100).toString();
-      const loginId = `${firstName}${last3Phone}`;
+      // If phone is missing, fallback to a random tenant ID
+      const loginId = phoneDigits.length >= 11 ? phoneDigits : (phoneDigits.length > 0 ? phoneDigits : `tenant_${Math.floor(Math.random() * 9000 + 1000)}`);
       const password = Math.random().toString(36).slice(-8);
 
       const res = await fetch(`/api/tenants/${tenantId}/credentials`, {
