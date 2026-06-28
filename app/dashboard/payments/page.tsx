@@ -25,6 +25,8 @@ import {
 import { PlusCircle, Search, Filter, FileText, Trash2 } from 'lucide-react'
 import { usePropertyType } from '@/components/PropertyTypeContext'
 import { useState, useEffect } from 'react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default function PaymentsPage() {
   const { propertyType } = usePropertyType()
@@ -146,6 +148,64 @@ export default function PaymentsPage() {
     }
   }
 
+  const generateReceipt = (payment: any) => {
+    const doc = new jsPDF()
+    
+    // Header
+    doc.setFontSize(22)
+    doc.setTextColor(139, 92, 246) // violet-500
+    doc.text('Payment Receipt', 105, 20, { align: 'center' })
+    
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text(`Receipt No: ${payment._id.substring(0, 8).toUpperCase()}`, 20, 35)
+    doc.text(`Date: ${new Date(payment.paymentDate).toLocaleDateString()}`, 190, 35, { align: 'right' })
+    
+    // Tenant Info
+    doc.setFontSize(12)
+    doc.setTextColor(40)
+    doc.text('Tenant Information:', 20, 50)
+    doc.setFontSize(10)
+    doc.text(`Name: ${payment.tenantName}`, 20, 58)
+    doc.text(`Building: ${payment.building}`, 20, 64)
+    doc.text(`Room: ${payment.room}`, 20, 70)
+    doc.text(`Month: ${payment.month} ${payment.year}`, 20, 76)
+    
+    // Table
+    const totalAmount = payment.rentAmount + payment.gasAmount + payment.electricityAmount
+    const tableData = [
+      ['Rent', `BDT ${payment.rentAmount.toLocaleString()}`],
+      ['Gas', `BDT ${payment.gasAmount.toLocaleString()}`],
+      ['Electricity', `BDT ${payment.electricityAmount.toLocaleString()}`],
+      ['Total', `BDT ${totalAmount.toLocaleString()}`],
+      ['Paid Amount', `BDT ${payment.paidAmount.toLocaleString()}`],
+      ['Due Amount', `BDT ${payment.dueAmount.toLocaleString()}`]
+    ]
+
+    autoTable(doc, {
+      startY: 85,
+      head: [['Description', 'Amount']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [139, 92, 246] },
+      styles: { halign: 'left' },
+      columnStyles: { 1: { halign: 'right' } }
+    })
+    
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY || 150
+    doc.setFontSize(12)
+    doc.setTextColor(40)
+    doc.text(`Status: ${payment.status}`, 20, finalY + 15)
+    doc.text(`Payment Method: ${payment.paymentMethod}`, 20, finalY + 23)
+    
+    doc.setFontSize(10)
+    doc.setTextColor(150)
+    doc.text('Thank you for your payment.', 105, finalY + 40, { align: 'center' })
+    
+    doc.save(`Receipt_${payment.tenantName}_${payment.month}.pdf`)
+  }
+
   const [statusFilter, setStatusFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -188,124 +248,22 @@ export default function PaymentsPage() {
           </div>
           
           <div className="flex gap-4 items-center">
-            <div className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-center">
+            <div 
+              className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-center cursor-pointer hover:bg-black/30 transition-colors"
+              onClick={() => setStatusFilter('Paid')}
+            >
               <div className="text-2xl font-bold text-white">{paidThisMonth}</div>
               <div className="text-xs text-green-300 font-medium uppercase tracking-wider">Paid this month</div>
             </div>
-            <div className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-center">
+            <div 
+              className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-center cursor-pointer hover:bg-black/30 transition-colors"
+              onClick={() => setStatusFilter('Due')}
+            >
               <div className="text-2xl font-bold text-white">{dueThisMonth}</div>
               <div className="text-xs text-red-300 font-medium uppercase tracking-wider">Due this month</div>
             </div>
           </div>
           
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-white text-violet-700 hover:bg-violet-50 rounded-full font-semibold shadow-md hover:shadow-lg transition-all h-11 px-6 w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Collect Rent
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-xl">Collect Rent Payment</DialogTitle>
-                <DialogDescription>
-                  Record a new payment from a tenant.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Tenant</Label>
-                  <select 
-                    className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-gray-800 dark:bg-gray-950"
-                    value={newPayment.tenantId}
-                    onChange={(e) => handleSelectTenant(e.target.value)}
-                  >
-                    <option value="" disabled>Select a tenant</option>
-                    {activeTenants.map(t => (
-                      <option key={t._id} value={t._id}>{t.name} ({t.room})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Month</Label>
-                  <select 
-                    className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-gray-800 dark:bg-gray-950"
-                    value={newPayment.month}
-                    onChange={(e) => setNewPayment({...newPayment, month: e.target.value})}
-                  >
-                    <option value="" disabled>Select Month</option>
-                    {months.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Rent (৳)</Label>
-                  <Input 
-                    type="number" 
-                    className="col-span-3"
-                    value={newPayment.rentAmount || ''}
-                    onChange={(e) => setNewPayment({...newPayment, rentAmount: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Gas (৳)</Label>
-                  <Input 
-                    type="number" 
-                    className="col-span-3"
-                    value={newPayment.gasAmount || ''}
-                    onChange={(e) => setNewPayment({...newPayment, gasAmount: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Electricity (৳)</Label>
-                  <Input 
-                    type="number" 
-                    className="col-span-3"
-                    value={newPayment.electricityAmount || ''}
-                    onChange={(e) => setNewPayment({...newPayment, electricityAmount: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-bold text-violet-600">Paid Amount (৳)</Label>
-                  <Input 
-                    type="number" 
-                    className="col-span-3 border-violet-300 bg-violet-50 focus-visible:ring-violet-500 dark:bg-violet-950/20"
-                    value={newPayment.paidAmount || ''}
-                    onChange={(e) => setNewPayment({...newPayment, paidAmount: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Method</Label>
-                  <select 
-                    className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-gray-800 dark:bg-gray-950"
-                    value={newPayment.paymentMethod}
-                    onChange={(e) => setNewPayment({...newPayment, paymentMethod: e.target.value})}
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="bKash">bKash</option>
-                    <option value="Bank">Bank Transfer</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Date</Label>
-                  <Input 
-                    type="date" 
-                    className="col-span-3"
-                    value={newPayment.paymentDate}
-                    onChange={(e) => setNewPayment({...newPayment, paymentDate: e.target.value})}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button onClick={handleCollectRent} className="bg-violet-600 hover:bg-violet-700 text-white w-full">
-                    Save Payment
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -406,7 +364,12 @@ export default function PaymentsPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" className="h-8 gap-1 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-full" disabled={payment.status === 'Due'}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 gap-1 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-full" 
+                          onClick={() => generateReceipt(payment)}
+                        >
                           <FileText className="h-4 w-4" />
                           <span className="hidden sm:inline font-medium">Receipt</span>
                         </Button>

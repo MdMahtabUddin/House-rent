@@ -294,41 +294,7 @@ export default function VerifyBillsPage() {
         </CardContent>
       </Card>
       
-      {/* Show Recently Paid Bills too so they can download PDF */}
-      <Card className="border border-gray-200/50 dark:border-gray-800/50 shadow-md bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl rounded-2xl overflow-hidden mt-4">
-        <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
-          <CardTitle className="text-lg">Recent Verified Payments</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-           <Table>
-            <TableHeader className="bg-gray-50/80 dark:bg-gray-900/50">
-              <TableRow>
-                <TableHead>Tenant</TableHead>
-                <TableHead>Month</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Receipt</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.filter(p => p.status === 'Paid' && (propertyType === 'Shop' ? p.type === 'Shop' : (p.type === 'House' || !p.type))).slice(0, 10).map(bill => (
-                <TableRow key={bill._id}>
-                  <TableCell>
-                    <div className="font-medium">{bill.tenantName}</div>
-                    <div className="text-xs text-gray-500">{bill.room}</div>
-                  </TableCell>
-                  <TableCell>{bill.month} {bill.year}</TableCell>
-                  <TableCell className="font-semibold text-green-600">৳ {bill.paidAmount > 0 ? bill.paidAmount : bill.dueAmount}</TableCell>
-                  <TableCell>{bill.paymentDate || 'N/A'}</TableCell>
-                  <TableCell className="text-right">
-                    <DownloadReceiptButton payment={bill} iconOnly={true} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+
     </div>
   )
 }
