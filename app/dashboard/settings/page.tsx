@@ -72,6 +72,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        {/* Security Settings */}
         <Card className="border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950">
           <CardHeader>
             <CardTitle className="text-lg">Change Password</CardTitle>
@@ -122,6 +123,71 @@ export default function SettingsPage() {
                 {isLoading ? 'Updating...' : 'Update Password'}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Application Preferences */}
+        <Card className="border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950 flex flex-col">
+          <CardHeader>
+            <CardTitle className="text-lg">Application Preferences</CardTitle>
+            <CardDescription>
+              Customize how the application looks and feels.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 flex-1">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-sm">Currency Display</h4>
+                  <p className="text-sm text-gray-500">Default currency symbol for amounts</p>
+                </div>
+                <select className="h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm outline-none">
+                  <option value="BDT">৳ (BDT)</option>
+                  <option value="USD">$ (USD)</option>
+                </select>
+              </div>
+              <hr className="border-gray-100 dark:border-gray-800" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-sm">Email Notifications</h4>
+                  <p className="text-sm text-gray-500">Receive alerts for new payments</p>
+                </div>
+                <div className="relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full bg-green-500">
+                  <span className="translate-x-5 inline-block h-4 w-4 transform rounded-full bg-white transition" />
+                </div>
+              </div>
+              <hr className="border-gray-100 dark:border-gray-800" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-sm">Language</h4>
+                  <p className="text-sm text-gray-500">Dashboard interface language</p>
+                </div>
+                <select className="h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm outline-none">
+                  <option value="en">English</option>
+                  <option value="bn">Bengali</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Management */}
+        <Card className="border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950 md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg">Data Management</CardTitle>
+            <CardDescription>
+              Export your property and tenant data for backup purposes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button variant="outline" className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50">
+                Export Tenants (CSV)
+              </Button>
+              <Button variant="outline" className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50">
+                Export Payments (CSV)
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

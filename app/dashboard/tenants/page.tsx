@@ -35,7 +35,7 @@ import {
 import { Label } from '@/components/ui/label'
 
 import { useState, useEffect } from 'react'
-import { Copy, KeyRound, CheckCircle2, Trash2 } from 'lucide-react'
+import { Copy, KeyRound, CheckCircle2, Trash2, Edit } from 'lucide-react'
 
 export default function TenantsPage() {
   const { propertyType } = usePropertyType()
@@ -66,6 +66,9 @@ export default function TenantsPage() {
     electricityCardNo: '',
   })
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+
+  const [editingTenant, setEditingTenant] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -114,6 +117,27 @@ export default function TenantsPage() {
       console.error('Error adding tenant:', error)
     }
   }
+
+  const handleEditTenant = async () => {
+    if (!editingTenant) return
+    try {
+      const res = await fetch(`/api/tenants/${editingTenant._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingTenant)
+      })
+      if (res.ok) {
+        setIsEditDialogOpen(false)
+        setEditingTenant(null)
+        fetchData()
+      } else {
+        alert('Failed to update tenant')
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
 
   const generateLogin = async (tenantId: string, tenantName: string, tenantPhone: string) => {
     try {
@@ -208,6 +232,65 @@ export default function TenantsPage() {
                 <DialogFooter className="mt-4 flex gap-2">
                   <Button variant="outline" onClick={() => setTenantToDelete(null)}>Cancel</Button>
                   <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit Tenant Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Tenant</DialogTitle>
+                  <DialogDescription>Update the details of the tenant.</DialogDescription>
+                </DialogHeader>
+                {editingTenant && (
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Name</Label>
+                      <Input className="col-span-3" value={editingTenant.name || ''} onChange={e => setEditingTenant({...editingTenant, name: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Phone</Label>
+                      <Input className="col-span-3" value={editingTenant.phone || ''} onChange={e => setEditingTenant({...editingTenant, phone: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">NID</Label>
+                      <Input className="col-span-3" value={editingTenant.nid || ''} onChange={e => setEditingTenant({...editingTenant, nid: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Building</Label>
+                      <select 
+                        className="col-span-3 flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                        value={editingTenant.building || ''}
+                        onChange={e => setEditingTenant({...editingTenant, building: e.target.value})}
+                      >
+                        <option value="" disabled>Select Building</option>
+                        {displayBuildings.map(b => (
+                          <option key={b._id} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Unit</Label>
+                      <Input className="col-span-3" value={editingTenant.room || ''} onChange={e => setEditingTenant({...editingTenant, room: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Rent (৳)</Label>
+                      <Input type="number" className="col-span-3" value={editingTenant.rent || ''} onChange={e => setEditingTenant({...editingTenant, rent: parseInt(e.target.value) || 0})} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Contract Start</Label>
+                      <Input type="date" className="col-span-3" value={editingTenant.contractStartDate || ''} onChange={e => setEditingTenant({...editingTenant, contractStartDate: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Contract End</Label>
+                      <Input type="date" className="col-span-3" value={editingTenant.contractEndDate || ''} onChange={e => setEditingTenant({...editingTenant, contractEndDate: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                  <Button className="bg-rose-600 hover:bg-rose-700 text-white" onClick={handleEditTenant}>Save Changes</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -477,8 +560,17 @@ export default function TenantsPage() {
                                 <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => generateLogin(tenant._id, tenant.name, tenant.phone)}>
                                   <KeyRound className="w-4 h-4 mr-2 text-rose-500" /> Generate Login
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    setEditingTenant(tenant)
+                                    setIsEditDialogOpen(true)
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2 text-blue-500" /> Edit Tenant
+                                </DropdownMenuItem>
                                 <DropdownMenuItem className="cursor-pointer">
-                                  <Search className="w-4 h-4 mr-2 text-blue-500" /> View Profile
+                                  <Search className="w-4 h-4 mr-2 text-indigo-500" /> View Profile
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 

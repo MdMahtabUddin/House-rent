@@ -64,3 +64,39 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update credentials' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'landlord') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+    const body = await request.json();
+    const { id } = await params;
+    
+    const tenant = await Tenant.findOne({ _id: id, landlordId: session.userId });
+    if (!tenant) {
+      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+    }
+
+    const updatableFields = ['name', 'phone', 'nid', 'entryDate', 'contractStartDate', 'contractEndDate', 'building', 'room', 'rent'];
+    
+    updatableFields.forEach(field => {
+      if (body[field] !== undefined) {
+        tenant[field] = body[field];
+      }
+    });
+
+    await tenant.save();
+
+    return NextResponse.json({ success: true, tenant });
+  } catch (error: any) {
+    console.error('Failed to update tenant:', error);
+    return NextResponse.json({ error: 'Failed to update tenant' }, { status: 500 });
+  }
+}

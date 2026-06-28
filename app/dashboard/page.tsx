@@ -149,6 +149,34 @@ export default function DashboardPage() {
         </div>
       </div>
       
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Link href="/dashboard/tenants">
+          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 rounded-2xl border-indigo-100 hover:border-indigo-300 hover:bg-indigo-50 dark:border-indigo-900/50 dark:hover:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 shadow-sm transition-all">
+            <PlusCircle className="w-6 h-6" />
+            <span className="font-semibold">Add Tenant</span>
+          </Button>
+        </Link>
+        <Link href="/dashboard/payments">
+          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 rounded-2xl border-green-100 hover:border-green-300 hover:bg-green-50 dark:border-green-900/50 dark:hover:bg-green-900/20 text-green-700 dark:text-green-400 shadow-sm transition-all">
+            <Wallet className="w-6 h-6" />
+            <span className="font-semibold">Record Payment</span>
+          </Button>
+        </Link>
+        <Link href="/dashboard/properties">
+          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 rounded-2xl border-purple-100 hover:border-purple-300 hover:bg-purple-50 dark:border-purple-900/50 dark:hover:bg-purple-900/20 text-purple-700 dark:text-purple-400 shadow-sm transition-all">
+            <Home className="w-6 h-6" />
+            <span className="font-semibold">Manage Units</span>
+          </Button>
+        </Link>
+        <Link href="/dashboard/verify-bills">
+          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 rounded-2xl border-orange-100 hover:border-orange-300 hover:bg-orange-50 dark:border-orange-900/50 dark:hover:bg-orange-900/20 text-orange-700 dark:text-orange-400 shadow-sm transition-all">
+            <AlertCircle className="w-6 h-6" />
+            <span className="font-semibold">Verify Bills</span>
+          </Button>
+        </Link>
+      </div>
+
       {/* Dynamic Glassmorphic Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/40 dark:bg-gray-950/40 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">

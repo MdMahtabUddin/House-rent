@@ -22,7 +22,7 @@ import {
   DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog'
-import { PlusCircle, Search, Filter, FileText, Trash2 } from 'lucide-react'
+import { PlusCircle, Search, Filter, FileText, Trash2, Edit } from 'lucide-react'
 import { usePropertyType } from '@/components/PropertyTypeContext'
 import { useState, useEffect } from 'react'
 import jsPDF from 'jspdf'
@@ -36,6 +36,9 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([])
   const [tenants, setTenants] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const [editingPayment, setEditingPayment] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const [newPayment, setNewPayment] = useState({
     tenantId: '',
@@ -132,6 +135,29 @@ export default function PaymentsPage() {
       }
     } catch (error) {
       console.error('Failed to save payment', error)
+    }
+  }
+
+  const handleUpdatePayment = async () => {
+    if (!editingPayment) return
+    try {
+      const res = await fetch(`/api/payments/${editingPayment._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: editingPayment.status,
+          paidAmount: editingPayment.paidAmount
+        })
+      })
+      if (res.ok) {
+        setIsEditDialogOpen(false)
+        setEditingPayment(null)
+        fetchData()
+      } else {
+        alert('Failed to update payment')
+      }
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -264,6 +290,52 @@ export default function PaymentsPage() {
             </div>
           </div>
           
+          {/* Edit Payment Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Update Payment Status</DialogTitle>
+                <DialogDescription>Modify status and paid amount.</DialogDescription>
+              </DialogHeader>
+              {editingPayment && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Total Due</Label>
+                    <div className="col-span-3 text-sm font-semibold">
+                      ৳ {(editingPayment.rentAmount + editingPayment.gasAmount + editingPayment.electricityAmount).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Paid (৳)</Label>
+                    <Input 
+                      type="number" 
+                      className="col-span-3"
+                      value={editingPayment.paidAmount || 0}
+                      onChange={e => setEditingPayment({...editingPayment, paidAmount: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Status</Label>
+                    <select 
+                      className="col-span-3 flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                      value={editingPayment.status}
+                      onChange={e => setEditingPayment({...editingPayment, status: e.target.value})}
+                    >
+                      <option value="Paid">Paid</option>
+                      <option value="Partial">Partial</option>
+                      <option value="Due">Due</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                <Button className="bg-violet-600 hover:bg-violet-700 text-white" onClick={handleUpdatePayment}>Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
         </div>
       </div>
 
@@ -364,6 +436,17 @@ export default function PaymentsPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full" 
+                          onClick={() => {
+                            setEditingPayment(payment)
+                            setIsEditDialogOpen(true)
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
