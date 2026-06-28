@@ -178,6 +178,10 @@ export default function TenantsPage() {
     ? tenantsList.filter(t => t.type === 'Shop')
     : tenantsList.filter(t => t.type === 'House' || !t.type)
 
+  const displayBuildings = propertyType === 'Shop'
+    ? buildingsList.filter(b => b.propertyType === 'Shop')
+    : buildingsList.filter(b => b.propertyType === 'House' || !b.propertyType)
+
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
       {/* Premium Header */}
@@ -284,7 +288,7 @@ export default function TenantsPage() {
                         onChange={(e) => setNewTenant({...newTenant, building: e.target.value})}
                       >
                         <option value="" disabled>Select a building</option>
-                        {buildingsList.map(b => (
+                        {displayBuildings.map(b => (
                           <option key={b.name} value={b.name}>{b.name}</option>
                         ))}
                       </select>

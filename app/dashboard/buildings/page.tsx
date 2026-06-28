@@ -21,8 +21,10 @@ const initialBuildings = [
   { id: 1, name: 'Badda Tower', address: 'Middle Badda, Dhaka', rooms: 10, occupied: 8 },
   { id: 2, name: 'Mirpur Villa', address: 'Mirpur 10, Dhaka', rooms: 5, occupied: 4 }
 ]
+import { usePropertyType } from '@/components/PropertyTypeContext'
 
 export default function BuildingsPage() {
+  const { propertyType } = usePropertyType()
   const [buildings, setBuildings] = useState<any[]>([])
   const [newBuilding, setNewBuilding] = useState({ name: '', address: '', rooms: '' })
   const [isLoading, setIsLoading] = useState(true)
@@ -56,6 +58,7 @@ export default function BuildingsPage() {
           name: newBuilding.name,
           type: newBuilding.address || 'Dhaka', // Reusing 'type' field from model as address for now
           rooms: parseInt(newBuilding.rooms) || 0,
+          propertyType: propertyType
         })
       })
       
@@ -82,6 +85,10 @@ export default function BuildingsPage() {
   }
 
   if (isLoading) return <div>Loading buildings...</div>
+
+  const displayBuildings = propertyType === 'Shop'
+    ? buildings.filter(b => b.propertyType === 'Shop')
+    : buildings.filter(b => b.propertyType === 'House' || !b.propertyType)
 
 
   return (
@@ -154,7 +161,7 @@ export default function BuildingsPage() {
       
       {/* Cards Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {buildings.map((building) => (
+        {displayBuildings.map((building) => (
           <Card key={building._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
@@ -203,7 +210,7 @@ export default function BuildingsPage() {
           </Card>
         ))}
         
-        {buildings.length === 0 && (
+        {displayBuildings.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center bg-gray-50 dark:bg-gray-900/20 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
             <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
               <Building className="h-10 w-10 text-indigo-600 dark:text-indigo-400 opacity-50" />

@@ -111,7 +111,11 @@ export default function RoomsPage() {
     ? flats.filter(f => f.type === 'Shop') 
     : flats.filter(f => f.type === 'House' || !f.type)
 
-  const uniqueBuildings = Array.from(new Set([...propertyFlats.map(f => f.building), ...buildingsList.map(b => b.name)]))
+  const displayBuildings = propertyType === 'Shop'
+    ? buildingsList.filter(b => b.propertyType === 'Shop')
+    : buildingsList.filter(b => b.propertyType === 'House' || !b.propertyType)
+
+  const uniqueBuildings = Array.from(new Set([...propertyFlats.map(f => f.building), ...displayBuildings.map(b => b.name)]))
   const displayFlats = selectedBuildingFilter === 'All' ? propertyFlats : propertyFlats.filter(f => f.building === selectedBuildingFilter)
 
   return (
@@ -174,9 +178,9 @@ export default function RoomsPage() {
                       value={newFlat.building}
                       onChange={(e) => setNewFlat({...newFlat, building: e.target.value})}
                     >
-                      <option value="" disabled>Select a building</option>
-                      {buildingsList.map(b => (
-                        <option key={b.name} value={b.name}>{b.name}</option>
+                      <option value="" disabled>Select Building/Location</option>
+                      {displayBuildings.map(b => (
+                        <option key={b._id} value={b.name}>{b.name}</option>
                       ))}
                       {buildingsList.length === 0 && <option value="Badda Tower">Badda Tower (Default)</option>}
                     </select>
