@@ -8,6 +8,10 @@ export interface IUser extends mongoose.Document {
   access: {
     house: boolean;
     shop: boolean;
+    noticeBoard: boolean;
+    staff: boolean;
+    maintenance: boolean;
+    mess: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +26,10 @@ const UserSchema = new mongoose.Schema<IUser>(
     access: {
       house: { type: Boolean, default: true },
       shop: { type: Boolean, default: true },
+      noticeBoard: { type: Boolean, default: false },
+      staff: { type: Boolean, default: false },
+      maintenance: { type: Boolean, default: false },
+      mess: { type: Boolean, default: false },
     },
   },
   { timestamps: true }

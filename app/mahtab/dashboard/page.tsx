@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, LogOut, Users, Crown, Shield, Activity, Edit, Trash2, Home, Store, Settings } from 'lucide-react';
+import { PlusCircle, LogOut, Users, Crown, Shield, Activity, Edit, Trash2, Home, Store, Settings, ClipboardList, Wrench, Contact, Building2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,10 @@ export default function AdminDashboardPage() {
   const [plan, setPlan] = useState('free');
   const [accessHouse, setAccessHouse] = useState(true);
   const [accessShop, setAccessShop] = useState(false);
+  const [accessNoticeBoard, setAccessNoticeBoard] = useState(false);
+  const [accessStaff, setAccessStaff] = useState(false);
+  const [accessMaintenance, setAccessMaintenance] = useState(false);
+  const [accessMess, setAccessMess] = useState(false);
 
   // Edit states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -63,7 +67,14 @@ export default function AdminDashboardPage() {
           username,
           password,
           plan,
-          access: { house: accessHouse, shop: accessShop }
+          access: { 
+            house: accessHouse, 
+            shop: accessShop,
+            noticeBoard: accessNoticeBoard,
+            staff: accessStaff,
+            maintenance: accessMaintenance,
+            mess: accessMess
+          }
         })
       });
 
@@ -236,6 +247,22 @@ export default function AdminDashboardPage() {
                     <input type="checkbox" checked={accessShop} onChange={(e) => setAccessShop(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
                     <span className="text-sm font-semibold flex items-center gap-1.5"><Store className="w-4 h-4 text-gray-400" /> Shop</span>
                   </label>
+                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${accessNoticeBoard ? 'bg-indigo-50/50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
+                    <input type="checkbox" checked={accessNoticeBoard} onChange={(e) => setAccessNoticeBoard(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                    <span className="text-sm font-semibold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-gray-400" /> Notice Board</span>
+                  </label>
+                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${accessStaff ? 'bg-indigo-50/50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
+                    <input type="checkbox" checked={accessStaff} onChange={(e) => setAccessStaff(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                    <span className="text-sm font-semibold flex items-center gap-1.5"><Contact className="w-4 h-4 text-gray-400" /> Staff</span>
+                  </label>
+                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${accessMaintenance ? 'bg-indigo-50/50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
+                    <input type="checkbox" checked={accessMaintenance} onChange={(e) => setAccessMaintenance(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                    <span className="text-sm font-semibold flex items-center gap-1.5"><Wrench className="w-4 h-4 text-gray-400" /> Maintenance</span>
+                  </label>
+                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${accessMess ? 'bg-indigo-50/50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
+                    <input type="checkbox" checked={accessMess} onChange={(e) => setAccessMess(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                    <span className="text-sm font-semibold flex items-center gap-1.5"><Building2 className="w-4 h-4 text-gray-400" /> Mess</span>
+                  </label>
                 </div>
               </div>
 
@@ -291,7 +318,7 @@ export default function AdminDashboardPage() {
                         </span>
                       </td>
                       <td className="py-5 px-6">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           {landlord.access?.house ? (
                             <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400" title="House Access">
                               <Home className="w-4 h-4" />
@@ -300,6 +327,26 @@ export default function AdminDashboardPage() {
                           {landlord.access?.shop ? (
                             <span className="w-8 h-8 rounded-full bg-green-50 text-green-600 border border-green-100 flex items-center justify-center dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400" title="Shop Access">
                               <Store className="w-4 h-4" />
+                            </span>
+                          ) : <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 dark:bg-gray-900 dark:border-gray-800" />}
+                          {landlord.access?.noticeBoard ? (
+                            <span className="w-8 h-8 rounded-full bg-yellow-50 text-yellow-600 border border-yellow-100 flex items-center justify-center dark:bg-yellow-900/20 dark:border-yellow-800/50 dark:text-yellow-400" title="Notice Board Access">
+                              <ClipboardList className="w-4 h-4" />
+                            </span>
+                          ) : <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 dark:bg-gray-900 dark:border-gray-800" />}
+                          {landlord.access?.staff ? (
+                            <span className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center dark:bg-purple-900/20 dark:border-purple-800/50 dark:text-purple-400" title="Staff Management Access">
+                              <Contact className="w-4 h-4" />
+                            </span>
+                          ) : <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 dark:bg-gray-900 dark:border-gray-800" />}
+                          {landlord.access?.maintenance ? (
+                            <span className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center dark:bg-orange-900/20 dark:border-orange-800/50 dark:text-orange-400" title="Maintenance Access">
+                              <Wrench className="w-4 h-4" />
+                            </span>
+                          ) : <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 dark:bg-gray-900 dark:border-gray-800" />}
+                          {landlord.access?.mess ? (
+                            <span className="w-8 h-8 rounded-full bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center dark:bg-teal-900/20 dark:border-teal-800/50 dark:text-teal-400" title="Mess Management Access">
+                              <Building2 className="w-4 h-4" />
                             </span>
                           ) : <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 dark:bg-gray-900 dark:border-gray-800" />}
                         </div>
@@ -379,7 +426,7 @@ export default function AdminDashboardPage() {
 
               <div className="space-y-3">
                 <Label className="text-xs uppercase tracking-wider font-semibold text-gray-500">Module Access</Label>
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                   <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer">
                     <span className="flex items-center gap-3 font-medium">
                       <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Home className="w-4 h-4" /></div>
@@ -407,6 +454,66 @@ export default function AdminDashboardPage() {
                       onChange={(e) => setEditingLandlord({
                         ...editingLandlord, 
                         access: { ...editingLandlord.access, shop: e.target.checked }
+                      })}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer">
+                    <span className="flex items-center gap-3 font-medium">
+                      <div className="p-2 bg-yellow-100 text-yellow-600 rounded-lg"><ClipboardList className="w-4 h-4" /></div>
+                      Notice Board
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                      checked={editingLandlord.access?.noticeBoard}
+                      onChange={(e) => setEditingLandlord({
+                        ...editingLandlord, 
+                        access: { ...editingLandlord.access, noticeBoard: e.target.checked }
+                      })}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer">
+                    <span className="flex items-center gap-3 font-medium">
+                      <div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><Contact className="w-4 h-4" /></div>
+                      Staff Management
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                      checked={editingLandlord.access?.staff}
+                      onChange={(e) => setEditingLandlord({
+                        ...editingLandlord, 
+                        access: { ...editingLandlord.access, staff: e.target.checked }
+                      })}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer">
+                    <span className="flex items-center gap-3 font-medium">
+                      <div className="p-2 bg-orange-100 text-orange-600 rounded-lg"><Wrench className="w-4 h-4" /></div>
+                      Maintenance & Complaints
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                      checked={editingLandlord.access?.maintenance}
+                      onChange={(e) => setEditingLandlord({
+                        ...editingLandlord, 
+                        access: { ...editingLandlord.access, maintenance: e.target.checked }
+                      })}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer">
+                    <span className="flex items-center gap-3 font-medium">
+                      <div className="p-2 bg-teal-100 text-teal-600 rounded-lg"><Building2 className="w-4 h-4" /></div>
+                      Mess Management
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                      checked={editingLandlord.access?.mess}
+                      onChange={(e) => setEditingLandlord({
+                        ...editingLandlord, 
+                        access: { ...editingLandlord.access, mess: e.target.checked }
                       })}
                     />
                   </label>

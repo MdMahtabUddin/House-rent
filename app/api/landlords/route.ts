@@ -49,6 +49,10 @@ export async function POST(req: Request) {
       access: {
         house: data.access?.house ?? true,
         shop: data.access?.shop ?? false,
+        noticeBoard: data.access?.noticeBoard ?? false,
+        staff: data.access?.staff ?? false,
+        maintenance: data.access?.maintenance ?? false,
+        mess: data.access?.mess ?? false,
       }
     });
 

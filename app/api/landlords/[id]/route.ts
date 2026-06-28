@@ -62,7 +62,11 @@ export async function PUT(
           plan: body.plan,
           access: {
             house: body.access?.house,
-            shop: body.access?.shop
+            shop: body.access?.shop,
+            noticeBoard: body.access?.noticeBoard,
+            staff: body.access?.staff,
+            maintenance: body.access?.maintenance,
+            mess: body.access?.mess,
           }
         }
       },
