@@ -159,8 +159,8 @@ export default function TenantsPage() {
       const loginId = phoneDigits.length >= 11 ? phoneDigits : (phoneDigits.length > 0 ? phoneDigits : `tenant_${Math.floor(Math.random() * 9000 + 1000)}`);
       const password = Math.random().toString(36).slice(-8);
 
-      const res = await fetch(`/api/tenants/${tenantId}/credentials`, {
-        method: 'POST',
+      const res = await fetch(`/api/tenants/${tenantId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ loginId, password })
       });
