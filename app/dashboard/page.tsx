@@ -80,24 +80,37 @@ export default function DashboardPage() {
 
   if (!isMounted) return null
 
-  const emptyFlats = flats.filter(f => f.status === 'Empty')
+  // Filter by propertyType
+  const filteredFlats = propertyType === 'Shop'
+    ? flats.filter(f => f.type === 'Shop')
+    : flats.filter(f => f.type === 'House' || !f.type)
+    
+  const filteredPayments = propertyType === 'Shop'
+    ? payments.filter(p => p.type === 'Shop')
+    : payments.filter(p => p.type === 'House' || !p.type)
+    
+  const filteredTenants = propertyType === 'Shop'
+    ? tenants.filter(t => t.type === 'Shop')
+    : tenants.filter(t => t.type === 'House' || !t.type)
+
+  const emptyFlats = filteredFlats.filter(f => f.status === 'Empty')
   
   // Calculate from real Payments
   const currentMonth = new Date().toLocaleString('en-US', { month: 'long' })
-  const thisMonthPayments = payments.filter(p => p.month === currentMonth)
+  const thisMonthPayments = filteredPayments.filter(p => p.month === currentMonth)
   
   // Total Income this month
   const totalIncome = thisMonthPayments.reduce((acc, curr) => acc + (curr.paidAmount || 0), 0)
   
   // Due payments total
-  const duePayments = payments.filter(p => p.status === 'Due' || p.status === 'Partial')
+  const duePayments = filteredPayments.filter(p => p.status === 'Due' || p.status === 'Partial')
   const totalDueAmount = duePayments.reduce((acc, curr) => acc + (curr.dueAmount || 0), 0)
 
-  // Calculate Building Occupancy dynamically
+  // Calculate Building Occupancy dynamically based on filtered flats
   const buildingStats = buildings.map(b => {
-    const bFlats = flats.filter(f => f.building === b.name)
+    const bFlats = filteredFlats.filter(f => f.building === b.name)
     const occupied = bFlats.filter(f => f.status === 'Occupied' || f.status === 'rented').length
-    const total = bFlats.length || b.rooms || 1 // fallback to avoid div by zero
+    const total = bFlats.length || 1 // fallback to avoid div by zero, changed from b.rooms to bFlats.length to reflect filtered total
     const percentage = Math.round((occupied / total) * 100)
     return { name: b.name, occupied, total, percentage }
   })
@@ -164,8 +177,8 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">{tenants.length}</div>
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center">
+            <div className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">{filteredTenants.length}</div>
+            <p className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center bg-blue-50 dark:bg-blue-900/30 w-fit px-2 py-0.5 rounded-full">
               Across {buildings.length} buildings
             </p>
           </CardContent>

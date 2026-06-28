@@ -78,7 +78,8 @@ export default function RoomsPage() {
           name: newFlat.name,
           building: newFlat.building,
           rent: parseInt(newFlat.rent) || 0,
-          status: newFlat.status === 'empty' ? 'Empty' : 'Occupied'
+          status: newFlat.status === 'empty' ? 'Empty' : 'Occupied',
+          type: propertyType
         })
       })
       if (res.ok) {
@@ -106,8 +107,12 @@ export default function RoomsPage() {
   if (isLoading) return <div>Loading {unitNamePlural.toLowerCase()}...</div>
 
   // For the filter dropdown, derive unique buildings from current flats OR buildingsList
-  const uniqueBuildings = Array.from(new Set([...flats.map(f => f.building), ...buildingsList.map(b => b.name)]))
-  const displayFlats = selectedBuildingFilter === 'All' ? flats : flats.filter(f => f.building === selectedBuildingFilter)
+  const propertyFlats = propertyType === 'Shop' 
+    ? flats.filter(f => f.type === 'Shop') 
+    : flats.filter(f => f.type === 'House' || !f.type)
+
+  const uniqueBuildings = Array.from(new Set([...propertyFlats.map(f => f.building), ...buildingsList.map(b => b.name)]))
+  const displayFlats = selectedBuildingFilter === 'All' ? propertyFlats : propertyFlats.filter(f => f.building === selectedBuildingFilter)
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">

@@ -5,6 +5,7 @@ export interface IFlat extends mongoose.Document {
   building: string;
   rent: number;
   status: string;
+  type: string;
   landlordId: mongoose.Types.ObjectId;
 }
 
@@ -13,6 +14,7 @@ const FlatSchema = new mongoose.Schema<IFlat>({
   building: { type: String, required: true },
   rent: { type: Number, required: true },
   status: { type: String, required: true, default: 'Empty' },
+  type: { type: String, required: true, default: 'House' },
   landlordId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
 
