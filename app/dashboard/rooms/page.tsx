@@ -104,132 +104,165 @@ export default function RoomsPage() {
   const displayFlats = selectedBuildingFilter === 'All' ? flats : flats.filter(f => f.building === selectedBuildingFilter)
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{unitNamePlural}</h1>
-          <p className="text-sm text-gray-500">Manage {unitNamePlural.toLowerCase()} inside your properties.</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="relative flex items-center bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md px-3 h-10">
-            <Filter className="w-4 h-4 text-gray-500 mr-2" />
-            <select 
-              value={selectedBuildingFilter} 
-              onChange={(e) => setSelectedBuildingFilter(e.target.value)}
-              className="bg-transparent text-sm outline-none focus:ring-0 text-gray-700 dark:text-gray-200 w-[150px]"
-            >
-              <option value="All">All Buildings</option>
-              {uniqueBuildings.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 p-8 sm:p-10 text-white shadow-lg">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Properties {unitNamePlural}</h1>
+            <p className="text-teal-100 text-lg max-w-xl">
+              Manage individual {unitNamePlural.toLowerCase()} within your buildings, set rent amounts, and track occupancy.
+            </p>
           </div>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex items-center bg-black/20 backdrop-blur-md border border-white/10 rounded-full px-4 h-11 w-full sm:w-auto">
+              <Filter className="w-4 h-4 text-teal-200 mr-2" />
+              <select 
+                value={selectedBuildingFilter} 
+                onChange={(e) => setSelectedBuildingFilter(e.target.value)}
+                className="bg-transparent text-sm font-medium outline-none focus:ring-0 text-white w-[140px] appearance-none cursor-pointer"
+              >
+                <option value="All" className="text-gray-900">All Buildings</option>
+                {uniqueBuildings.map(b => (
+                  <option key={b as string} value={b as string} className="text-gray-900">{b as string}</option>
+                ))}
+              </select>
+            </div>
 
-          <Dialog>
-            <DialogTrigger render={<Button className="bg-green-600 hover:bg-green-700 text-white" />}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add {unitName}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New {unitName}</DialogTitle>
-                <DialogDescription>
-                  Enter the details of the new {unitName.toLowerCase()} here. Click save when you're done.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="unitNumber" className="text-right">
-                    {unitName} No.
-                  </Label>
-                  <Input 
-                    id="unitNumber" 
-                    placeholder="e.g. A-101" 
-                    className="col-span-3"
-                    value={newFlat.name}
-                    onChange={(e) => setNewFlat({...newFlat, name: e.target.value})}
-                  />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-white text-teal-700 hover:bg-teal-50 rounded-full font-semibold shadow-md hover:shadow-lg transition-all h-11 px-6 w-full sm:w-auto">
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  Add {unitName}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[450px]">
+                <DialogHeader>
+                  <DialogTitle className="text-xl">Add New {unitName}</DialogTitle>
+                  <DialogDescription>
+                    Enter the details of the new {unitName.toLowerCase()} unit here.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-5 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="unitNumber">{unitName} No.</Label>
+                    <Input 
+                      id="unitNumber" 
+                      placeholder="e.g. A-101" 
+                      value={newFlat.name}
+                      onChange={(e) => setNewFlat({...newFlat, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="property">Property / Building</Label>
+                    <select 
+                      id="property" 
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-gray-800 dark:bg-gray-950"
+                      value={newFlat.building}
+                      onChange={(e) => setNewFlat({...newFlat, building: e.target.value})}
+                    >
+                      <option value="" disabled>Select a building</option>
+                      {buildingsList.map(b => (
+                        <option key={b.name} value={b.name}>{b.name}</option>
+                      ))}
+                      {buildingsList.length === 0 && <option value="Badda Tower">Badda Tower (Default)</option>}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="rent">Rent (৳)</Label>
+                      <Input 
+                        id="rent" 
+                        type="number" 
+                        placeholder="15000" 
+                        value={newFlat.rent}
+                        onChange={(e) => setNewFlat({...newFlat, rent: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <select 
+                        id="status" 
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-gray-800 dark:bg-gray-950"
+                        value={newFlat.status}
+                        onChange={(e) => setNewFlat({...newFlat, status: e.target.value})}
+                      >
+                        <option value="empty">Empty</option>
+                        <option value="rented">Rented</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="property" className="text-right">
-                    Property
-                  </Label>
-                  <select 
-                    id="property" 
-                    className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-950 dark:border-gray-800 dark:bg-gray-950"
-                    value={newFlat.building}
-                    onChange={(e) => setNewFlat({...newFlat, building: e.target.value})}
-                  >
-                    <option value="" disabled>Select a building</option>
-                    {buildingsList.map(b => (
-                      <option key={b.name} value={b.name}>{b.name}</option>
-                    ))}
-                    {buildingsList.length === 0 && <option value="Badda Tower">Badda Tower (Default)</option>}
-                  </select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="rent" className="text-right">
-                    Rent (৳)
-                  </Label>
-                  <Input 
-                    id="rent" 
-                    type="number" 
-                    placeholder="15000" 
-                    className="col-span-3"
-                    value={newFlat.rent}
-                    onChange={(e) => setNewFlat({...newFlat, rent: e.target.value})}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">
-                    Status
-                  </Label>
-                  <select 
-                    id="status" 
-                    className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-950 dark:border-gray-800 dark:bg-gray-950"
-                    value={newFlat.status}
-                    onChange={(e) => setNewFlat({...newFlat, status: e.target.value})}
-                  >
-                    <option value="empty">Empty</option>
-                    <option value="rented">Rented</option>
-                  </select>
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose render={<Button onClick={handleAddFlat} className="bg-green-600 hover:bg-green-700 text-white" />}>
-                  Save {unitName}
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button onClick={handleAddFlat} className="bg-teal-600 hover:bg-teal-700 text-white w-full">
+                      Save {unitName}
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Cards Grid */}
+      <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4">
         {displayFlats.map((room) => (
-          <Card key={room._id} className="border-gray-100 shadow-sm relative group">
+          <Card key={room._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
             <Button 
               variant="destructive" 
               size="icon" 
-              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 h-8 w-8 rounded-full shadow-md z-10 translate-y-2 group-hover:translate-y-0"
               onClick={() => handleDelete(room._id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pr-14">
-              <CardTitle className="text-lg font-bold">{isShop ? `Shop ${room.name}` : room.name}</CardTitle>
-              <UnitIcon className="h-4 w-4 text-gray-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-gray-500 mb-2">{room.building}</div>
-              <div className="text-lg font-semibold mb-2">৳ {room.rent}</div>
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${room.status === 'Occupied' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                {room.status}
+            
+            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6 relative z-10">
+              <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-2xl text-teal-600 dark:text-teal-400">
+                <UnitIcon className="h-6 w-6" />
+              </div>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                room.status === 'Occupied' || room.status === 'rented' 
+                  ? 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 ring-1 ring-blue-200 dark:ring-blue-800' 
+                  : 'bg-yellow-100/80 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 ring-1 ring-yellow-200 dark:ring-yellow-800'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${room.status === 'Occupied' || room.status === 'rented' ? 'bg-blue-500' : 'bg-yellow-500 animate-pulse'}`}></span>
+                {room.status === 'rented' ? 'Occupied' : room.status}
               </span>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 pt-4 relative z-10">
+              <CardTitle className="text-xl font-bold mb-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                {isShop ? `Shop ${room.name}` : room.name}
+              </CardTitle>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {room.building}
+              </p>
+              
+              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400 mb-1">Monthly Rent</div>
+                <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">৳ {room.rent?.toLocaleString()}</div>
+              </div>
             </CardContent>
           </Card>
         ))}
+        
+        {displayFlats.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center bg-gray-50 dark:bg-gray-900/20 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+            <div className="w-20 h-20 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mb-4">
+              <UnitIcon className="h-10 w-10 text-teal-600 dark:text-teal-400 opacity-50" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No units found</h3>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">
+              You haven't added any {unitNamePlural.toLowerCase()} yet, or none match your selected filter. Start by adding a new unit.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

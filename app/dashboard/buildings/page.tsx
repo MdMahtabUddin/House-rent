@@ -85,94 +85,144 @@ export default function BuildingsPage() {
 
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Buildings</h1>
-          <p className="text-sm text-gray-500">Manage your properties and buildings.</p>
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 sm:p-10 text-white shadow-lg">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Properties & Buildings</h1>
+            <p className="text-blue-100 text-lg max-w-xl">
+              Manage your real estate portfolio, add new properties, and track their capacity.
+            </p>
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full font-semibold shadow-md hover:shadow-lg transition-all h-11 px-6">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Add Building
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[450px]">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Add New Property</DialogTitle>
+                <DialogDescription>
+                  Enter the details of your new building or property complex.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-5 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="b_name">Property Name</Label>
+                  <Input 
+                    id="b_name" 
+                    placeholder="e.g. Gulshan Heights" 
+                    value={newBuilding.name}
+                    onChange={(e) => setNewBuilding({...newBuilding, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="b_address">Location / Address</Label>
+                  <Input 
+                    id="b_address" 
+                    placeholder="e.g. Gulshan 1, Dhaka" 
+                    value={newBuilding.address}
+                    onChange={(e) => setNewBuilding({...newBuilding, address: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="b_rooms">Total Units/Rooms</Label>
+                  <Input 
+                    id="b_rooms" 
+                    type="number" 
+                    placeholder="20" 
+                    value={newBuilding.rooms}
+                    onChange={(e) => setNewBuilding({...newBuilding, rooms: e.target.value})}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button onClick={handleAddBuilding} className="bg-indigo-600 hover:bg-indigo-700 text-white w-full">
+                    Save Property
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog>
-          <DialogTrigger render={<Button className="bg-green-600 hover:bg-green-700 text-white" />}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Building
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add New Building</DialogTitle>
-              <DialogDescription>
-                Enter the details of the new property here.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="b_name" className="text-right">Name</Label>
-                <Input 
-                  id="b_name" 
-                  placeholder="e.g. Gulshan Heights" 
-                  className="col-span-3" 
-                  value={newBuilding.name}
-                  onChange={(e) => setNewBuilding({...newBuilding, name: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="b_address" className="text-right">Address</Label>
-                <Input 
-                  id="b_address" 
-                  placeholder="e.g. Gulshan 1, Dhaka" 
-                  className="col-span-3" 
-                  value={newBuilding.address}
-                  onChange={(e) => setNewBuilding({...newBuilding, address: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="b_rooms" className="text-right">Total Units</Label>
-                <Input 
-                  id="b_rooms" 
-                  type="number" 
-                  placeholder="20" 
-                  className="col-span-3" 
-                  value={newBuilding.rooms}
-                  onChange={(e) => setNewBuilding({...newBuilding, rooms: e.target.value})}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose render={<Button onClick={handleAddBuilding} className="bg-green-600 hover:bg-green-700 text-white" />}>
-                Save Building
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Cards Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {buildings.map((building) => (
-          <Card key={building._id} className="border-gray-100 shadow-sm relative group">
+          <Card key={building._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
             <Button 
               variant="destructive" 
               size="icon" 
-              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 h-8 w-8 rounded-full shadow-md z-10 translate-y-2 group-hover:translate-y-0"
               onClick={() => handleDelete(building._id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pr-14">
-              <CardTitle className="text-lg font-bold">{building.name}</CardTitle>
-              <Building className="h-5 w-5 text-gray-400" />
+            
+            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6 relative z-10">
+              <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                <Building className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-semibold px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300">
+                {building.rooms} Units Total
+              </span>
             </CardHeader>
-            <CardContent>
-              <div className="text-sm text-gray-500 mb-4">{building.type}</div>
-              <div className="flex justify-between text-sm">
-                <div>
-                  <span className="font-semibold">{building.rooms}</span> Total Rooms
+            <CardContent className="px-6 pb-6 pt-4 relative z-10">
+              <CardTitle className="text-xl font-bold mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                {building.name}
+              </CardTitle>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                {building.type || 'Dhaka, Bangladesh'}
+              </p>
+              
+              <div className="flex justify-between items-center text-sm pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex flex-col">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold">Status</span>
+                  <span className="font-bold text-green-600 dark:text-green-400 mt-1 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Active
+                  </span>
                 </div>
-                <div>
-                  <span className="font-semibold text-green-600">0</span> Occupied
+                <div className="flex flex-col items-end">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold">Occupancy</span>
+                  <span className="font-bold text-gray-900 dark:text-white mt-1">
+                    -- / {building.rooms}
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
+        
+        {buildings.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center bg-gray-50 dark:bg-gray-900/20 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+            <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
+              <Building className="h-10 w-10 text-indigo-600 dark:text-indigo-400 opacity-50" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No properties yet</h3>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">
+              You haven't added any buildings or properties to your portfolio. Start by adding your first property.
+            </p>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Your First Property
+                </Button>
+              </DialogTrigger>
+              {/* Note: The dialog content is already above, so ideally we extract it or just reuse the trigger */}
+            </Dialog>
+          </div>
+        )}
       </div>
     </div>
   )

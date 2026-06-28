@@ -103,104 +103,116 @@ export default function VerifyBillsPage() {
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Manage Bills</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Generate monthly rent and utility bills for your tenants.
-          </p>
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 p-8 sm:p-10 text-white shadow-lg">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Manage Bills & Utilities</h1>
+            <p className="text-sky-100 text-lg max-w-xl">
+              Generate monthly rent, gas, and electricity bills for your tenants. They will be notified automatically.
+            </p>
+          </div>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-white text-sky-700 hover:bg-sky-50 rounded-full font-semibold shadow-md hover:shadow-lg transition-all h-11 px-6 w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Generate Monthly Bill
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[450px]">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Generate Monthly Bill</DialogTitle>
+                <DialogDescription>
+                  Create a new bill for a tenant including rent and utilities.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-5 py-4">
+                <div className="space-y-2">
+                  <Label>Select Tenant</Label>
+                  <select 
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-gray-800 dark:bg-gray-950"
+                    value={newBill.tenantId}
+                    onChange={(e) => setNewBill({...newBill, tenantId: e.target.value})}
+                  >
+                    <option value="" disabled>Select a tenant</option>
+                    {activeTenants.map(t => (
+                      <option key={t._id} value={t._id}>{t.name} ({t.room})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Billing Month</Label>
+                  <select 
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-gray-800 dark:bg-gray-950"
+                    value={newBill.month}
+                    onChange={(e) => setNewBill({...newBill, month: e.target.value})}
+                  >
+                    <option value="" disabled>Select Month</option>
+                    {months.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Gas Bill (৳)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="0"
+                      value={newBill.gasAmount}
+                      onChange={(e) => setNewBill({...newBill, gasAmount: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Electricity Bill (৳)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="0"
+                      value={newBill.electricityAmount}
+                      onChange={(e) => setNewBill({...newBill, electricityAmount: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button onClick={handleAddBill} className="bg-sky-600 hover:bg-sky-700 text-white w-full">
+                    Create Bill
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-        
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700 text-white w-fit">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Generate Monthly Bill
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Generate Monthly Bill</DialogTitle>
-              <DialogDescription>
-                Create a due bill for a tenant including rent and utilities.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Tenant</Label>
-                <select 
-                  className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
-                  value={newBill.tenantId}
-                  onChange={(e) => setNewBill({...newBill, tenantId: e.target.value})}
-                >
-                  <option value="" disabled>Select a tenant</option>
-                  {activeTenants.map(t => (
-                    <option key={t._id} value={t._id}>{t.name} ({t.room})</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Month</Label>
-                <select 
-                  className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
-                  value={newBill.month}
-                  onChange={(e) => setNewBill({...newBill, month: e.target.value})}
-                >
-                  <option value="" disabled>Select Month</option>
-                  {months.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Gas (৳)</Label>
-                <Input 
-                  type="number" 
-                  className="col-span-3"
-                  value={newBill.gasAmount}
-                  onChange={(e) => setNewBill({...newBill, gasAmount: parseInt(e.target.value) || 0})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Electricity (৳)</Label>
-                <Input 
-                  type="number" 
-                  className="col-span-3"
-                  value={newBill.electricityAmount}
-                  onChange={(e) => setNewBill({...newBill, electricityAmount: parseInt(e.target.value) || 0})}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button onClick={handleAddBill} className="bg-green-600 hover:bg-green-700 text-white">
-                  Create Bill
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      <Card className="border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-950">
-        <CardHeader className="pb-3">
+      <Card className="border border-gray-200/50 dark:border-gray-800/50 shadow-md bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl rounded-2xl overflow-hidden">
+        <CardHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg">Pending Verification Queue</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-2 h-6 bg-cyan-500 rounded-full"></div>
+                Pending Verification Queue
+              </CardTitle>
+              <CardDescription className="mt-1 ml-4">
                 When tenants submit bills via their portal, they will appear here.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500">
-            <div className="p-4 bg-green-50 dark:bg-green-900/10 rounded-full mb-4">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
+          <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500">
+            <div className="relative">
+              <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full"></div>
+              <div className="relative p-6 bg-green-50 dark:bg-green-900/20 rounded-full mb-6 border border-green-100 dark:border-green-800/50">
+                <CheckCircle2 className="h-16 w-16 text-green-500 drop-shadow-md" />
+              </div>
             </div>
-            <p className="font-medium text-lg text-gray-900 dark:text-gray-100">All caught up!</p>
-            <p className="text-sm mt-1">There are no pending bills submitted by tenants at this time.</p>
+            <h3 className="font-extrabold text-2xl text-gray-900 dark:text-gray-100 mb-2">You're all caught up!</h3>
+            <p className="text-base max-w-sm mx-auto">There are no pending bills submitted by tenants waiting for your verification at this time.</p>
           </div>
         </CardContent>
       </Card>
