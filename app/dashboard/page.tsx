@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [greeting, setGreeting] = useState('Welcome back')
   const [GreetingIcon, setGreetingIcon] = useState<any>(Sun)
   const [currentTime, setCurrentTime] = useState('')
+  const [userName, setUserName] = useState('Landlord')
   const [isMounted, setIsMounted] = useState(false)
 
   // Local Storage States
@@ -56,19 +57,27 @@ export default function DashboardPage() {
       setCurrentTime(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }))
     }, 1000)
 
-    // Fetch real stats
     const fetchDashboardData = async () => {
       try {
-        const [bRes, fRes, tRes, pRes] = await Promise.all([
+        const [bRes, fRes, tRes, pRes, meRes] = await Promise.all([
           fetch('/api/buildings'),
           fetch('/api/flats'),
           fetch('/api/tenants'),
-          fetch('/api/payments')
+          fetch('/api/payments'),
+          fetch('/api/auth/me')
         ])
         if (bRes.ok) setBuildings(await bRes.json())
         if (fRes.ok) setFlats(await fRes.json())
         if (tRes.ok) setTenants(await tRes.json())
         if (pRes.ok) setPayments(await pRes.json())
+        if (meRes.ok) {
+          const userData = await meRes.json()
+          if (userData.user?.name) {
+            setUserName(userData.user.name)
+          } else if (userData.user?.username) {
+            setUserName(userData.user.username)
+          }
+        }
       } catch (err) {
         console.error('Failed to load dashboard stats', err)
       }
@@ -127,7 +136,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3 mb-2">
               <GreetingIcon className="w-8 h-8 text-yellow-300 animate-pulse" />
               <h1 className="text-4xl font-extrabold tracking-tight">
-                {greeting}, Landlord!
+                {greeting}, {userName}!
               </h1>
             </div>
             <p className="text-indigo-100 text-lg max-w-xl">
