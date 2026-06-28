@@ -147,11 +147,11 @@ export default function PaymentsPage() {
   }
 
   const filteredPayments = propertyType === 'Shop'
-    ? payments.filter(p => p.type === 'Shop' || !p.type)
+    ? payments.filter(p => p.type === 'Shop')
     : payments.filter(p => p.type === 'House' || !p.type)
 
   const activeTenants = propertyType === 'Shop'
-    ? tenants.filter(t => t.type === 'Shop' || !t.type)
+    ? tenants.filter(t => t.type === 'Shop')
     : tenants.filter(t => t.type === 'House' || !t.type)
 
   if (isLoading) return <div>Loading payments...</div>

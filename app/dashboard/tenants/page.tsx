@@ -173,8 +173,10 @@ export default function TenantsPage() {
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading tenants...</div>
 
-  // Strict filtering based on propertyType
-  const displayTenants = tenantsList.filter(t => t.type === propertyType)
+  // Strict filtering based on propertyType, handling legacy missing types as House
+  const displayTenants = propertyType === 'Shop'
+    ? tenantsList.filter(t => t.type === 'Shop')
+    : tenantsList.filter(t => t.type === 'House' || !t.type)
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">

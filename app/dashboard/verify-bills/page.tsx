@@ -121,10 +121,10 @@ export default function VerifyBillsPage() {
   }
 
   const activeTenants = propertyType === 'Shop'
-    ? tenants.filter(t => t.type === 'Shop' || !t.type)
+    ? tenants.filter(t => t.type === 'Shop')
     : tenants.filter(t => t.type === 'House' || !t.type)
 
-  const pendingBills = payments.filter(p => p.status === 'Pending' && (propertyType === 'Shop' ? p.type === 'Shop' : p.type === 'House'))
+  const pendingBills = payments.filter(p => p.status === 'Pending' && (propertyType === 'Shop' ? p.type === 'Shop' : (p.type === 'House' || !p.type)))
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -311,7 +311,7 @@ export default function VerifyBillsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.filter(p => p.status === 'Paid' && (propertyType === 'Shop' ? p.type === 'Shop' : p.type === 'House')).slice(0, 10).map(bill => (
+              {payments.filter(p => p.status === 'Paid' && (propertyType === 'Shop' ? p.type === 'Shop' : (p.type === 'House' || !p.type))).slice(0, 10).map(bill => (
                 <TableRow key={bill._id}>
                   <TableCell>
                     <div className="font-medium">{bill.tenantName}</div>
