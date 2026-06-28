@@ -146,6 +146,9 @@ export default function PaymentsPage() {
     }
   }
 
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
+
   const filteredPayments = propertyType === 'Shop'
     ? payments.filter(p => p.type === 'Shop')
     : payments.filter(p => p.type === 'House' || !p.type)
@@ -157,6 +160,19 @@ export default function PaymentsPage() {
   if (isLoading) return <div>Loading payments...</div>
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const currentMonth = new Date().toLocaleString('en-US', { month: 'long' })
+  const currentYear = new Date().getFullYear().toString()
+
+  // Calculate stats for current month
+  const thisMonthBills = filteredPayments.filter(p => p.month === currentMonth && p.year === currentYear)
+  const paidThisMonth = thisMonthBills.filter(p => p.status === 'Paid').length
+  const dueThisMonth = thisMonthBills.filter(p => p.status === 'Due' || p.status === 'Pending').length
+
+  const displayPayments = filteredPayments.filter(p => {
+    const matchStatus = statusFilter === 'All' ? true : p.status === statusFilter
+    const matchSearch = p.tenantName?.toLowerCase().includes(searchQuery.toLowerCase()) || p.room?.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchStatus && matchSearch
+  })
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
@@ -169,6 +185,17 @@ export default function PaymentsPage() {
             <p className="text-violet-100 text-lg max-w-xl">
               Track {propertyType.toLowerCase()} rent collections, view due amounts, and generate receipts.
             </p>
+          </div>
+          
+          <div className="flex gap-4 items-center">
+            <div className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-center">
+              <div className="text-2xl font-bold text-white">{paidThisMonth}</div>
+              <div className="text-xs text-green-300 font-medium uppercase tracking-wider">Paid this month</div>
+            </div>
+            <div className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-center">
+              <div className="text-2xl font-bold text-white">{dueThisMonth}</div>
+              <div className="text-xs text-red-300 font-medium uppercase tracking-wider">Due this month</div>
+            </div>
           </div>
           
           <Dialog>
@@ -295,12 +322,24 @@ export default function PaymentsPage() {
                 <Input
                   type="search"
                   placeholder={`Search tenant or ${unitName.toLowerCase()}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 w-full sm:w-[280px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 rounded-full h-10"
                 />
               </div>
-              <Button variant="outline" size="icon" className="shrink-0 rounded-full h-10 w-10 border-gray-200 dark:border-gray-800">
-                <Filter className="h-4 w-4" />
-              </Button>
+              <div className="relative">
+                <select 
+                  className="appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full h-10 pl-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Paid">Paid Only</option>
+                  <option value="Due">Due Only</option>
+                  <option value="Pending">Pending</option>
+                </select>
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -318,7 +357,7 @@ export default function PaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayments.map((payment) => (
+                {displayPayments.map((payment) => (
                   <TableRow key={payment._id} className="hover:bg-violet-50/30 dark:hover:bg-violet-900/10 border-b border-gray-50 dark:border-gray-800/50 transition-colors">
                     <TableCell className="pl-6">
                       <div className="font-bold text-gray-900 dark:text-gray-100">
@@ -379,7 +418,7 @@ export default function PaymentsPage() {
                   </TableRow>
                 ))}
                 
-                {filteredPayments.length === 0 && (
+                {displayPayments.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-16 text-gray-500">
                       <div className="flex flex-col items-center justify-center">
