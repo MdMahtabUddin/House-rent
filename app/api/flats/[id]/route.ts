@@ -22,3 +22,28 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete flat' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'landlord') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    await dbConnect();
+    const { id } = await params;
+    const body = await request.json();
+    const updatedFlat = await Flat.findOneAndUpdate(
+      { _id: id, landlordId: session.userId },
+      { $set: body },
+      { new: true }
+    );
+    if (!updatedFlat) {
+      return NextResponse.json({ error: 'Flat not found or unauthorized' }, { status: 404 });
+    }
+    return NextResponse.json({ flat: updatedFlat });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update flat' }, { status: 500 });
+  }
+}

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PlusCircle, DoorOpen, Store, Filter, Trash2 } from 'lucide-react'
+import { PlusCircle, DoorOpen, Store, Filter, Trash2, Edit } from 'lucide-react'
 import { usePropertyType } from '@/components/PropertyTypeContext'
 import { useState, useEffect } from 'react'
 import {
@@ -39,6 +39,8 @@ export default function RoomsPage() {
   const [isLoading, setIsLoading] = useState(true)
   
   const [newFlat, setNewFlat] = useState({ name: '', building: '', rent: '', status: 'empty' })
+  const [editingFlat, setEditingFlat] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -101,6 +103,31 @@ export default function RoomsPage() {
       } catch (error) {
         console.error('Failed to delete flat:', error)
       }
+    }
+  }
+
+  const handleUpdateFlat = async () => {
+    if (!editingFlat || !editingFlat.name || !editingFlat.building) return
+    
+    try {
+      const res = await fetch(`/api/flats/${editingFlat._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingFlat.name,
+          building: editingFlat.building,
+          rent: parseInt(editingFlat.rent) || 0,
+          status: editingFlat.status === 'empty' ? 'Empty' : 'Occupied',
+          type: propertyType
+        })
+      })
+      if (res.ok) {
+        setEditingFlat(null)
+        setIsEditDialogOpen(false)
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Failed to update flat:', error)
     }
   }
 
@@ -229,14 +256,30 @@ export default function RoomsPage() {
           <Card key={room._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
             <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
-            <Button 
-              variant="destructive" 
-              size="icon" 
-              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 h-8 w-8 rounded-full shadow-md z-10 translate-y-2 group-hover:translate-y-0"
-              onClick={() => handleDelete(room._id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 translate-y-2 group-hover:translate-y-0">
+              <Button 
+                variant="secondary" 
+                size="icon" 
+                className="h-8 w-8 rounded-full shadow-md bg-white hover:bg-gray-100 text-gray-700"
+                onClick={() => {
+                  setEditingFlat({
+                    ...room,
+                    status: room.status === 'Occupied' || room.status === 'rented' ? 'rented' : 'empty'
+                  })
+                  setIsEditDialogOpen(true)
+                }}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="icon" 
+                className="h-8 w-8 rounded-full shadow-md"
+                onClick={() => handleDelete(room._id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6 relative z-10">
               <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-2xl text-teal-600 dark:text-teal-400">
@@ -296,6 +339,73 @@ export default function RoomsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Flat Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Edit {unitName}</DialogTitle>
+            <DialogDescription>
+              Update details for this {unitName.toLowerCase()}.
+            </DialogDescription>
+          </DialogHeader>
+          {editingFlat && (
+            <div className="grid gap-5 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_flat_name">{unitName} Number/Name</Label>
+                <Input 
+                  id="edit_flat_name" 
+                  value={editingFlat.name}
+                  onChange={(e) => setEditingFlat({...editingFlat, name: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_building">Building</Label>
+                  <select 
+                    id="edit_building" 
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-gray-800 dark:bg-gray-950"
+                    value={editingFlat.building}
+                    onChange={(e) => setEditingFlat({...editingFlat, building: e.target.value})}
+                  >
+                    <option value="" disabled>Select Building</option>
+                    {uniqueBuildings.map(b => (
+                      <option key={b as string} value={b as string}>{b as string}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_rent">Monthly Rent</Label>
+                  <Input 
+                    id="edit_rent" 
+                    type="number" 
+                    value={editingFlat.rent}
+                    onChange={(e) => setEditingFlat({...editingFlat, rent: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_status">Status</Label>
+                <select 
+                  id="edit_status" 
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-gray-800 dark:bg-gray-950"
+                  value={editingFlat.status}
+                  onChange={(e) => setEditingFlat({...editingFlat, status: e.target.value})}
+                >
+                  <option value="empty">Empty</option>
+                  <option value="rented">Rented</option>
+                </select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateFlat} className="bg-teal-600 hover:bg-teal-700 text-white">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PlusCircle, Building, Trash2 } from 'lucide-react'
+import { PlusCircle, Building, Trash2, Edit } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import {
   Dialog,
@@ -27,6 +27,8 @@ export default function BuildingsPage() {
   const { propertyType } = usePropertyType()
   const [buildings, setBuildings] = useState<any[]>([])
   const [newBuilding, setNewBuilding] = useState({ name: '', address: '', rooms: '' })
+  const [editingBuilding, setEditingBuilding] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchBuildings = async () => {
@@ -81,6 +83,30 @@ export default function BuildingsPage() {
       } catch (error) {
         console.error('Failed to delete building:', error)
       }
+    }
+  }
+
+  const handleUpdateBuilding = async () => {
+    if (!editingBuilding || !editingBuilding.name) return
+    
+    try {
+      const res = await fetch(`/api/buildings/${editingBuilding._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingBuilding.name,
+          type: editingBuilding.address || editingBuilding.type || 'Dhaka',
+          rooms: parseInt(editingBuilding.rooms) || 0
+        })
+      })
+      
+      if (res.ok) {
+        setEditingBuilding(null)
+        setIsEditDialogOpen(false)
+        fetchBuildings()
+      }
+    } catch (error) {
+      console.error('Failed to update building:', error)
     }
   }
 
@@ -165,14 +191,27 @@ export default function BuildingsPage() {
           <Card key={building._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
-            <Button 
-              variant="destructive" 
-              size="icon" 
-              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 h-8 w-8 rounded-full shadow-md z-10 translate-y-2 group-hover:translate-y-0"
-              onClick={() => handleDelete(building._id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 translate-y-2 group-hover:translate-y-0">
+              <Button 
+                variant="secondary" 
+                size="icon" 
+                className="h-8 w-8 rounded-full shadow-md bg-white hover:bg-gray-100 text-gray-700"
+                onClick={() => {
+                  setEditingBuilding({ ...building, address: building.type })
+                  setIsEditDialogOpen(true)
+                }}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="icon" 
+                className="h-8 w-8 rounded-full shadow-md"
+                onClick={() => handleDelete(building._id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6 relative z-10">
               <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
@@ -231,6 +270,53 @@ export default function BuildingsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Building Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Edit Property</DialogTitle>
+            <DialogDescription>
+              Update the details of this property.
+            </DialogDescription>
+          </DialogHeader>
+          {editingBuilding && (
+            <div className="grid gap-5 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_b_name">Property Name</Label>
+                <Input 
+                  id="edit_b_name" 
+                  value={editingBuilding.name}
+                  onChange={(e) => setEditingBuilding({...editingBuilding, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_b_address">Location / Address</Label>
+                <Input 
+                  id="edit_b_address" 
+                  value={editingBuilding.address}
+                  onChange={(e) => setEditingBuilding({...editingBuilding, address: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_b_rooms">Total Units/Rooms</Label>
+                <Input 
+                  id="edit_b_rooms" 
+                  type="number" 
+                  value={editingBuilding.rooms}
+                  onChange={(e) => setEditingBuilding({...editingBuilding, rooms: e.target.value})}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateBuilding} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
