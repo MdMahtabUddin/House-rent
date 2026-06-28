@@ -153,8 +153,9 @@ export default function TenantsPage() {
   const generateLogin = async (tenantId: string, tenantName: string, tenantPhone: string) => {
     try {
       // Create loginId: first name + last 3 digits of phone
-      const firstName = tenantName.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-      const phoneDigits = tenantPhone.replace(/\D/g, ''); // remove non-digits
+      const firstName = (tenantName || 'user').split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const phoneStr = tenantPhone || '';
+      const phoneDigits = phoneStr.replace(/\D/g, ''); // remove non-digits
       const last3Phone = phoneDigits.length >= 3 ? phoneDigits.slice(-3) : Math.floor(Math.random() * 900 + 100).toString();
       const loginId = `${firstName}${last3Phone}`;
       const password = Math.random().toString(36).slice(-8);

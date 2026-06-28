@@ -4,7 +4,7 @@ import Tenant from '@/models/Tenant';
 import { getSession } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getSession();
     if (!session || session.role !== 'landlord') {
@@ -19,7 +19,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Missing loginId or password' }, { status: 400 });
     }
 
-    const tenant = await Tenant.findOne({ _id: params.id, landlordId: session.userId });
+    const { id } = await params;
+    const tenant = await Tenant.findOne({ _id: id, landlordId: session.userId });
     if (!tenant) {
       return NextResponse.json({ error: 'Tenant not found or unauthorized' }, { status: 404 });
     }
