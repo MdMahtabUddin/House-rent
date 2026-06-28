@@ -15,6 +15,8 @@ export interface ITenant extends mongoose.Document {
   electricityCardNo?: string;
   status: string;
   type: string;
+  loginId?: string;
+  password?: string;
   landlordId: mongoose.Types.ObjectId;
 }
 
@@ -33,6 +35,8 @@ const TenantSchema = new mongoose.Schema<ITenant>({
   electricityCardNo: { type: String },
   status: { type: String, required: true, default: 'Paid' },
   type: { type: String, required: true, default: 'House' },
+  loginId: { type: String, unique: true, sparse: true },
+  password: { type: String },
   landlordId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
 

@@ -1,4 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+'use client'
+
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -8,7 +11,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Calendar, CreditCard, Flame, Zap, MapPin, Download, AlertCircle } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Calendar, CreditCard, Flame, Zap, MapPin, Download, AlertCircle, KeyRound } from 'lucide-react'
 
 // Mock Tenant Data
 const myData = {
@@ -34,6 +39,40 @@ const myPayments = [
 ]
 
 export default function TenantDashboard() {
+  const [newLoginId, setNewLoginId] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [updateMsg, setUpdateMsg] = useState({ type: '', text: '' })
+
+  const handleUpdateCredentials = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newLoginId || !newPassword) return
+
+    setIsUpdating(true)
+    setUpdateMsg({ type: '', text: '' })
+
+    try {
+      const res = await fetch('/api/tenant/update-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loginId: newLoginId, password: newPassword })
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        setUpdateMsg({ type: 'success', text: 'Credentials updated successfully!' })
+        setNewLoginId('')
+        setNewPassword('')
+      } else {
+        setUpdateMsg({ type: 'error', text: data.error || 'Update failed' })
+      }
+    } catch (err) {
+      setUpdateMsg({ type: 'error', text: 'An error occurred' })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -156,6 +195,54 @@ export default function TenantDashboard() {
               </TableBody>
             </Table>
           </CardContent>
+        </Card>
+
+        {/* Security & Settings */}
+        <Card className="bg-white dark:bg-gray-950 border-gray-100 shadow-sm md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-blue-600" />
+              Security Settings
+            </CardTitle>
+            <CardDescription>Update your login credentials (ID and Password) here.</CardDescription>
+          </CardHeader>
+          <form onSubmit={handleUpdateCredentials}>
+            <CardContent className="space-y-4">
+              {updateMsg.text && (
+                <div className={`p-3 rounded-md text-sm text-center ${updateMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  {updateMsg.text}
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newId">New Login ID</Label>
+                  <Input 
+                    id="newId" 
+                    placeholder="e.g. abdur123" 
+                    value={newLoginId} 
+                    onChange={(e) => setNewLoginId(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password"
+                    placeholder="Enter new password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    required 
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" disabled={isUpdating} className="bg-blue-600 hover:bg-blue-700 text-white">
+                {isUpdating ? 'Updating...' : 'Save New Credentials'}
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </div>

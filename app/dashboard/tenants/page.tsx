@@ -150,10 +150,32 @@ export default function TenantsPage() {
     }
   }
 
-  const generateLogin = (tenantId: string, tenantName: string) => {
-    const password = Math.random().toString(36).slice(-8)
-    setLoginCreds({ id: tenantId, pass: password, name: tenantName })
-    setCopied(false)
+  const generateLogin = async (tenantId: string, tenantName: string, tenantPhone: string) => {
+    try {
+      // Create loginId: first name + last 3 digits of phone
+      const firstName = tenantName.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const phoneDigits = tenantPhone.replace(/\D/g, ''); // remove non-digits
+      const last3Phone = phoneDigits.length >= 3 ? phoneDigits.slice(-3) : Math.floor(Math.random() * 900 + 100).toString();
+      const loginId = `${firstName}${last3Phone}`;
+      const password = Math.random().toString(36).slice(-8);
+
+      const res = await fetch(`/api/tenants/${tenantId}/credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loginId, password })
+      });
+
+      if (res.ok) {
+        setLoginCreds({ id: loginId, pass: password, name: tenantName });
+        setCopied(false);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to generate login credentials');
+      }
+    } catch (error) {
+      console.error('Error generating login:', error);
+      alert('An error occurred while generating login');
+    }
   }
 
   const copyCreds = () => {
@@ -446,7 +468,7 @@ export default function TenantsPage() {
                             <DropdownMenuGroup>
                               <DropdownMenuLabel className="font-normal text-xs text-gray-500">Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => generateLogin(tenant._id, tenant.name)}>
+                              <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => generateLogin(tenant._id, tenant.name, tenant.phone)}>
                                 <KeyRound className="w-4 h-4 mr-2 text-rose-500" /> Generate Login
                               </DropdownMenuItem>
                               <DropdownMenuItem className="cursor-pointer">
