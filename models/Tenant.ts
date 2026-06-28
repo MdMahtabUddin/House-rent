@@ -4,7 +4,9 @@ export interface ITenant extends mongoose.Document {
   name: string;
   phone: string;
   nid: string;
-  entryDate: string;
+  entryDate?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
   building: string;
   room: string;
   shopName?: string;
@@ -24,7 +26,9 @@ const TenantSchema = new mongoose.Schema<ITenant>({
   name: { type: String, required: true },
   phone: { type: String, required: true },
   nid: { type: String, required: true },
-  entryDate: { type: String, required: true },
+  entryDate: { type: String },
+  contractStartDate: { type: String },
+  contractEndDate: { type: String },
   building: { type: String, required: true },
   room: { type: String, required: true },
   shopName: { type: String },

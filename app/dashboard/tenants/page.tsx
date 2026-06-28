@@ -20,45 +20,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
-import { PlusCircle, Search, MoreHorizontal, Filter } from 'lucide-react'
+import { PlusCircle, Search, MoreHorizontal, Filter, AlertTriangle } from 'lucide-react'
 import { usePropertyType } from '@/components/PropertyTypeContext'
-
-const initialTenants = [
-  {
-    id: 'T-01711223344',
-    name: 'Abdur Rahman',
-    phone: '01711-223344',
-    nid: '1990123456789',
-    building: 'Badda Tower',
-    room: 'A-101',
-    shopName: 'Rahman Store',
-    tradeLicense: 'TR-10293847',
-    rent: 15000,
-    advance: 30000,
-    entryDate: '2023-01-01',
-    gasCardNo: 'G-778899',
-    electricityCardNo: 'E-112233',
-    status: 'Paid',
-    type: 'House',
-  },
-  {
-    id: 'T-01822334455',
-    name: 'Rafiqul Islam',
-    phone: '01822-334455',
-    nid: '1985987654321',
-    building: 'Mirpur Villa',
-    room: 'B-205',
-    shopName: 'Rafiq Electronics',
-    tradeLicense: 'TR-56473829',
-    rent: 10000,
-    advance: 20000,
-    entryDate: '2023-06-15',
-    gasCardNo: 'G-445566',
-    electricityCardNo: 'E-445566',
-    status: 'Due',
-    type: 'Shop',
-  },
-]
 
 import {
   Dialog,
@@ -72,7 +35,7 @@ import {
 import { Label } from '@/components/ui/label'
 
 import { useState, useEffect } from 'react'
-import { Copy, KeyRound, CheckCircle2 } from 'lucide-react'
+import { Copy, KeyRound, CheckCircle2, Trash2 } from 'lucide-react'
 
 export default function TenantsPage() {
   const { propertyType } = usePropertyType()
@@ -91,6 +54,8 @@ export default function TenantsPage() {
     phone: '',
     nid: '',
     entryDate: '',
+    contractStartDate: '',
+    contractEndDate: '',
     building: '',
     room: '',
     shopName: '',
@@ -133,13 +98,13 @@ export default function TenantsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newTenant,
-          type: propertyType
+          type: propertyType // Strictly binding to current property context
         })
       })
       if (res.ok) {
         setIsAddDialogOpen(false)
         setNewTenant({
-          name: '', phone: '', nid: '', entryDate: '', building: '', room: '', shopName: '', tradeLicense: '', rent: 0, advance: 0, gasCardNo: '', electricityCardNo: ''
+          name: '', phone: '', nid: '', entryDate: '', contractStartDate: '', contractEndDate: '', building: '', room: '', shopName: '', tradeLicense: '', rent: 0, advance: 0, gasCardNo: '', electricityCardNo: ''
         })
         fetchData()
       } else {
@@ -152,59 +117,64 @@ export default function TenantsPage() {
 
   const generateLogin = async (tenantId: string, tenantName: string, tenantPhone: string) => {
     try {
-      // Create loginId: tenant's mobile number
       const phoneStr = tenantPhone || '';
-      const phoneDigits = phoneStr.replace(/\D/g, ''); // remove non-digits
-      // If phone is missing, fallback to a random tenant ID
-      const loginId = phoneDigits.length >= 11 ? phoneDigits : (phoneDigits.length > 0 ? phoneDigits : `tenant_${Math.floor(Math.random() * 9000 + 1000)}`);
-      const password = Math.random().toString(36).slice(-8);
+      const phoneDigits = phoneStr.replace(/\D/g, ''); 
+      const loginId = phoneDigits.length >= 11 ? phoneDigits : `user${Math.floor(Math.random()*10000)}`;
+      
+      const randomPass = Math.random().toString(36).slice(-6);
 
-      const res = await fetch(`/api/tenants/${tenantId}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/tenants/${tenantId}/credentials`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loginId, password })
+        body: JSON.stringify({ loginId, password: randomPass })
       });
 
       if (res.ok) {
-        setLoginCreds({ id: loginId, pass: password, name: tenantName });
+        setLoginCreds({ id: loginId, pass: randomPass, name: tenantName || 'Tenant' });
         setCopied(false);
       } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to generate login credentials');
+        const err = await res.json()
+        alert(err.error || 'Failed to generate credentials')
       }
     } catch (error) {
-      console.error('Error generating login:', error);
-      alert('An error occurred while generating login');
+      console.error(error);
+      alert('Error generating login');
     }
   }
 
   const copyCreds = () => {
     if (loginCreds) {
-      navigator.clipboard.writeText(`Login URL: http://localhost:3000\nTenant ID: ${loginCreds.id}\nPassword: ${loginCreds.pass}`)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      navigator.clipboard.writeText(`Login ID: ${loginCreds.id}\nPassword: ${loginCreds.pass}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   }
 
   const confirmDelete = async () => {
-    if (tenantToDelete) {
-      try {
-        const res = await fetch(`/api/tenants/${tenantToDelete.id}`, { method: 'DELETE' })
-        if (res.ok) {
-          setTenantToDelete(null)
-          fetchData()
-        }
-      } catch (error) {
-        console.error('Failed to delete tenant:', error)
+    if (!tenantToDelete) return;
+    try {
+      const res = await fetch(`/api/tenants/${tenantToDelete.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTenantsList(tenantsList.filter(t => t._id !== tenantToDelete.id));
+        setTenantToDelete(null);
+      } else {
+        alert('Failed to delete tenant');
       }
+    } catch (error) {
+      console.error(error);
     }
   }
 
-  if (isLoading) return <div>Loading tenants...</div>
+  const getDaysLeft = (endDate: string) => {
+    if (!endDate) return null;
+    const diff = new Date(endDate).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 3600 * 24));
+  }
 
-  const displayTenants = propertyType === 'Shop' 
-    ? tenantsList.filter(t => t.type === 'Shop' || !t.type)
-    : tenantsList.filter(t => t.type === 'House' || !t.type)
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading tenants...</div>
+
+  // Strict filtering based on propertyType
+  const displayTenants = tenantsList.filter(t => t.type === propertyType)
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
@@ -289,10 +259,17 @@ export default function TenantsPage() {
                       <Label htmlFor="nid">NID Number</Label>
                       <Input id="nid" placeholder="1990123456789" value={newTenant.nid} onChange={e => setNewTenant({...newTenant, nid: e.target.value})} />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="entryDate">Entry Date</Label>
-                      <Input id="entryDate" type="date" value={newTenant.entryDate} onChange={e => setNewTenant({...newTenant, entryDate: e.target.value})} />
-                    </div>
+                    {isShop ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="contractStartDate">Contract Start Date</Label>
+                        <Input id="contractStartDate" type="date" value={newTenant.contractStartDate} onChange={e => setNewTenant({...newTenant, contractStartDate: e.target.value})} />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="entryDate">Entry Date</Label>
+                        <Input id="entryDate" type="date" value={newTenant.entryDate} onChange={e => setNewTenant({...newTenant, entryDate: e.target.value})} />
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -317,7 +294,7 @@ export default function TenantsPage() {
                   </div>
 
                   {isShop && (
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-rose-50/50 dark:bg-rose-900/10 rounded-lg border border-rose-100 dark:border-rose-800">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-rose-50/50 dark:bg-rose-900/10 rounded-lg border border-rose-100 dark:border-rose-800">
                       <div className="space-y-2">
                         <Label htmlFor="shopName">Shop Name</Label>
                         <Input id="shopName" placeholder="Rahman Store" value={newTenant.shopName} onChange={e => setNewTenant({...newTenant, shopName: e.target.value})} />
@@ -325,6 +302,10 @@ export default function TenantsPage() {
                       <div className="space-y-2">
                         <Label htmlFor="tradeLicense">Trade License No</Label>
                         <Input id="tradeLicense" placeholder="TR-123456" value={newTenant.tradeLicense} onChange={e => setNewTenant({...newTenant, tradeLicense: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractEndDate" className="text-rose-600 font-bold">Contract End Date</Label>
+                        <Input id="contractEndDate" type="date" value={newTenant.contractEndDate} onChange={e => setNewTenant({...newTenant, contractEndDate: e.target.value})} className="border-rose-300 focus-visible:ring-rose-500" />
                       </div>
                     </div>
                   )}
@@ -387,7 +368,7 @@ export default function TenantsPage() {
                   <TableHead className="pl-6 font-semibold">Tenant Info</TableHead>
                   <TableHead className="font-semibold">Contact</TableHead>
                   {propertyType === 'Shop' ? (
-                    <TableHead className="font-semibold">Shop Details</TableHead>
+                    <TableHead className="font-semibold">Shop Details & Contract</TableHead>
                   ) : (
                     <TableHead className="font-semibold">Room Details</TableHead>
                   )}
@@ -404,89 +385,109 @@ export default function TenantsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  displayTenants.map((tenant, idx) => (
-                    <TableRow key={`${tenant._id}-${idx}`} className="hover:bg-rose-50/30 dark:hover:bg-rose-900/10 border-b border-gray-50 dark:border-gray-800/50 transition-colors">
-                      <TableCell className="pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold shadow-inner">
-                            {tenant.name?.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-900 dark:text-gray-100">
-                              {tenant.name}
+                  displayTenants.map((tenant, idx) => {
+                    const daysLeft = propertyType === 'Shop' ? getDaysLeft(tenant.contractEndDate) : null;
+                    const isExpiringSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 90;
+                    const isExpired = daysLeft !== null && daysLeft < 0;
+
+                    return (
+                      <TableRow key={`${tenant._id}-${idx}`} className="hover:bg-rose-50/30 dark:hover:bg-rose-900/10 border-b border-gray-50 dark:border-gray-800/50 transition-colors">
+                        <TableCell className="pl-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold shadow-inner">
+                              {tenant.name?.charAt(0).toUpperCase()}
                             </div>
-                            <div className="text-xs font-mono text-gray-500 mt-0.5">
-                              {tenant._id?.substring(0, 8)}...
+                            <div>
+                              <div className="font-bold text-gray-900 dark:text-gray-100">
+                                {tenant.name}
+                              </div>
+                              <div className="text-xs font-mono text-gray-500 mt-0.5">
+                                {tenant._id?.substring(0, 8)}...
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{tenant.phone}</div>
-                        <div className="text-xs text-gray-500 mt-0.5 font-mono">NID: {tenant.nid}</div>
-                      </TableCell>
-                      <TableCell>
-                        {propertyType === 'Shop' ? (
-                          <>
-                            <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{tenant.shopName}</div>
-                            <div className="text-xs text-gray-500 mt-0.5">Lic: {tenant.tradeLicense}</div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{tenant.room}</div>
-                            <div className="text-xs text-gray-500 mt-0.5">{tenant.building}</div>
-                          </>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm font-black text-rose-600 dark:text-rose-400 tracking-tight">৳ {tenant.rent?.toLocaleString()} <span className="text-xs font-medium text-gray-400">/mo</span></div>
-                        <div className="text-xs text-gray-500 mt-0.5 bg-gray-100 dark:bg-gray-800 inline-block px-2 py-0.5 rounded-md">
-                          Adv: ৳ {tenant.advance?.toLocaleString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                            tenant.status === 'Paid'
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-800'
-                              : tenant.status === 'Due'
-                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'
-                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 ring-1 ring-yellow-200 dark:ring-yellow-800'
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${tenant.status === 'Paid' ? 'bg-green-500' : tenant.status === 'Due' ? 'bg-red-500 animate-pulse' : 'bg-yellow-500'}`}></span>
-                          {tenant.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger className="flex h-8 w-8 ml-auto items-center justify-center rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 outline-none">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4 text-gray-500" />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                            <DropdownMenuGroup>
-                              <DropdownMenuLabel className="font-normal text-xs text-gray-500">Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => generateLogin(tenant._id, tenant.name, tenant.phone)}>
-                                <KeyRound className="w-4 h-4 mr-2 text-rose-500" /> Generate Login
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer">
-                                <Search className="w-4 h-4 mr-2 text-blue-500" /> View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-red-600 font-bold focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-900/20 cursor-pointer"
-                                onClick={() => setTenantToDelete({ id: tenant._id, name: tenant.name })}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" /> Delete Tenant
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{tenant.phone}</div>
+                          <div className="text-xs text-gray-500 mt-0.5 font-mono">NID: {tenant.nid}</div>
+                        </TableCell>
+                        <TableCell>
+                          {propertyType === 'Shop' ? (
+                            <>
+                              <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{tenant.shopName} - {tenant.room}</div>
+                              {tenant.contractEndDate && (
+                                <div className="mt-1">
+                                  {isExpired ? (
+                                    <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold ring-1 ring-red-300">
+                                      <AlertTriangle className="w-3 h-3" /> Expired
+                                    </span>
+                                  ) : isExpiringSoon ? (
+                                    <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold ring-1 ring-yellow-300 animate-pulse">
+                                      <AlertTriangle className="w-3 h-3" /> Expires in {daysLeft} days
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-500">Exp: {tenant.contractEndDate}</span>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{tenant.room}</div>
+                              <div className="text-xs text-gray-500 mt-0.5">{tenant.building}</div>
+                            </>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm font-black text-rose-600 dark:text-rose-400 tracking-tight">৳ {tenant.rent?.toLocaleString()} <span className="text-xs font-medium text-gray-400">/mo</span></div>
+                          <div className="text-xs text-gray-500 mt-0.5 bg-gray-100 dark:bg-gray-800 inline-block px-2 py-0.5 rounded-md">
+                            Adv: ৳ {tenant.advance?.toLocaleString()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                              tenant.status === 'Paid'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-800'
+                                : tenant.status === 'Due'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'
+                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 ring-1 ring-yellow-200 dark:ring-yellow-800'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${tenant.status === 'Paid' ? 'bg-green-500' : tenant.status === 'Due' ? 'bg-red-500 animate-pulse' : 'bg-yellow-500'}`}></span>
+                            {tenant.status}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex h-8 w-8 ml-auto items-center justify-center rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 outline-none">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                              <DropdownMenuGroup>
+                                <DropdownMenuLabel className="font-normal text-xs text-gray-500">Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => generateLogin(tenant._id, tenant.name, tenant.phone)}>
+                                  <KeyRound className="w-4 h-4 mr-2 text-rose-500" /> Generate Login
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="cursor-pointer">
+                                  <Search className="w-4 h-4 mr-2 text-blue-500" /> View Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-red-600 font-bold focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-900/20 cursor-pointer"
+                                  onClick={() => setTenantToDelete({ id: tenant._id, name: tenant.name })}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete Tenant
+                                </DropdownMenuItem>
+                              </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>
@@ -496,4 +497,3 @@ export default function TenantsPage() {
     </div>
   )
 }
-import { Trash2 } from 'lucide-react'

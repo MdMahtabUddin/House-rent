@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar, CreditCard, Flame, Zap, MapPin, AlertCircle, KeyRound, CheckCircle2, ChevronRight, XCircle } from 'lucide-react'
+import { Calendar, CreditCard, Flame, Zap, MapPin, AlertCircle, KeyRound, CheckCircle2, ChevronRight, XCircle, AlertTriangle } from 'lucide-react'
 import { DownloadReceiptButton } from '@/components/DownloadReceiptButton'
 import {
   Dialog,
@@ -127,8 +127,37 @@ export default function TenantDashboard() {
 
   const totalDueAmount = dues.reduce((acc, curr) => acc + (curr.dueAmount || 0), 0)
 
+  const getDaysLeft = (endDate: string) => {
+    if (!endDate) return null;
+    const diff = new Date(endDate).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 3600 * 24));
+  }
+
+  const daysLeft = myData.type === 'Shop' ? getDaysLeft(myData.contractEndDate) : null;
+  const isExpiringSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 90;
+  const isExpired = daysLeft !== null && daysLeft < 0;
+
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-500 pb-12">
+      {myData.type === 'Shop' && isExpired && (
+        <div className="bg-red-500 text-white p-4 rounded-xl shadow-md flex items-center gap-3">
+          <AlertTriangle className="w-6 h-6 shrink-0" />
+          <div>
+            <h3 className="font-bold">Contract Expired!</h3>
+            <p className="text-sm text-red-100">Your shop contract ended on {myData.contractEndDate}. Please contact your landlord immediately to renew.</p>
+          </div>
+        </div>
+      )}
+      {myData.type === 'Shop' && isExpiringSoon && (
+        <div className="bg-yellow-500 text-white p-4 rounded-xl shadow-md flex items-center gap-3">
+          <AlertTriangle className="w-6 h-6 shrink-0" />
+          <div>
+            <h3 className="font-bold">Contract Expiring Soon!</h3>
+            <p className="text-sm text-yellow-100">Your shop contract will expire in {daysLeft} days (on {myData.contractEndDate}). Please contact your landlord to discuss renewal.</p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-gradient-to-r from-blue-700 to-sky-600 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full -mr-20 -mt-20"></div>
         <div className="relative z-10">
@@ -172,7 +201,11 @@ export default function TenantDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">৳ {(myData.advance || 0).toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">Moved in: {myData.entryDate}</p>
+            {myData.type === 'Shop' ? (
+              <p className="text-xs text-gray-500 mt-1">Contract Start: {myData.contractStartDate || 'N/A'}</p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">Moved in: {myData.entryDate}</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -301,9 +334,24 @@ export default function TenantDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Property</p>
-                  <p className="text-sm text-gray-500">{myData.room}, {myData.building}</p>
+                  <p className="text-sm text-gray-500">
+                    {myData.type === 'Shop' && myData.shopName ? `${myData.shopName} - ` : ''}{myData.room}, {myData.building}
+                  </p>
                 </div>
               </div>
+
+              {myData.type === 'Shop' && (
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <Calendar className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Contract Period</p>
+                    <p className="text-sm text-gray-500 mt-1">Start: {myData.contractStartDate || 'N/A'}</p>
+                    <p className="text-sm text-gray-500">End: {myData.contractEndDate || 'N/A'}</p>
+                  </div>
+                </div>
+              )}
               
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
