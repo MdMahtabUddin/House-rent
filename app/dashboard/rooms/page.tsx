@@ -33,7 +33,7 @@ export default function RoomsPage() {
   const UnitIcon = isShop ? Store : DoorOpen
 
   const [flats, setFlats] = useState<any[]>([])
-  const [buildingsList, setBuildingsList] = useState<{name: string}[]>([])
+  const [buildingsList, setBuildingsList] = useState<any[]>([])
   const [tenantsList, setTenantsList] = useState<any[]>([])
   const [selectedBuildingFilter, setSelectedBuildingFilter] = useState('All')
   const [isLoading, setIsLoading] = useState(true)
