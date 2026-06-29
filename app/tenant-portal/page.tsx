@@ -13,16 +13,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar, CreditCard, Flame, Zap, MapPin, AlertCircle, KeyRound, CheckCircle2, ChevronRight, XCircle, AlertTriangle } from 'lucide-react'
+import { Calendar, CreditCard, Flame, Zap, AlertCircle, KeyRound, CheckCircle2, XCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { DownloadReceiptButton } from '@/components/DownloadReceiptButton'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 export default function TenantDashboard() {
   const [data, setData] = useState<{ tenant: any, payments: any[] } | null>(null)
@@ -32,11 +24,6 @@ export default function TenantDashboard() {
   const [newPassword, setNewPassword] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [updateMsg, setUpdateMsg] = useState({ type: '', text: '' })
-
-  const [selectedBill, setSelectedBill] = useState<any>(null)
-  const [paymentMethod, setPaymentMethod] = useState('bKash')
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
-  const [isSubmittingBill, setIsSubmittingBill] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -66,9 +53,8 @@ export default function TenantDashboard() {
     setUpdateMsg({ type: '', text: '' })
 
     try {
-      // Re-using the landlord's API path since we bypassed the folder bug using PATCH
-      const res = await fetch(`/api/tenants/${data?.tenant._id}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/tenant/update-credentials`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ loginId: newLoginId, password: newPassword })
       })
@@ -88,36 +74,8 @@ export default function TenantDashboard() {
     }
   }
 
-  const handleSubmitBill = async () => {
-    if (!selectedBill) return
-    setIsSubmittingBill(true)
-    try {
-      const res = await fetch(`/api/payments/${selectedBill._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentMethod,
-          paymentDate,
-        })
-      })
-      if (res.ok) {
-        alert('Bill submitted for verification successfully!')
-        setSelectedBill(null)
-        fetchData()
-      } else {
-        const err = await res.json()
-        alert(err.error || 'Failed to submit bill')
-      }
-    } catch (error) {
-      console.error(error)
-      alert('An error occurred')
-    } finally {
-      setIsSubmittingBill(false)
-    }
-  }
-
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading your portal...</div>
-  if (!data || !data.tenant) return <div className="p-8 text-center text-red-500">Failed to load data</div>
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 font-sans tracking-wide"><div className="animate-pulse flex items-center gap-2"><ShieldCheck className="w-6 h-6 text-indigo-500 animate-spin" /> <span className="font-medium text-gray-500">Loading Portal...</span></div></div>
+  if (!data || !data.tenant) return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950"><div className="text-red-500 font-bold p-8 bg-white dark:bg-gray-900 rounded-3xl shadow-xl">Failed to load data</div></div>
 
   const myData = data.tenant
   const myPayments = data.payments || []
@@ -138,263 +96,247 @@ export default function TenantDashboard() {
   const isExpired = daysLeft !== null && daysLeft < 0;
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-500 pb-12">
-      {myData.type === 'Shop' && isExpired && (
-        <div className="bg-red-500 text-white p-4 rounded-xl shadow-md flex items-center gap-3">
-          <AlertTriangle className="w-6 h-6 shrink-0" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8 space-y-8 font-sans">
+      {myData.type === 'Shop' && (isExpired || isExpiringSoon) && (
+        <div className={`p-4 md:p-6 rounded-2xl shadow-xl flex items-center gap-4 text-white backdrop-blur-xl border ${isExpired ? 'bg-red-500/90 border-red-400' : 'bg-yellow-500/90 border-yellow-400'}`}>
+          <div className="p-3 bg-white/20 rounded-xl"><AlertTriangle className="w-8 h-8" /></div>
           <div>
-            <h3 className="font-bold">Contract Expired!</h3>
-            <p className="text-sm text-red-100">Your shop contract ended on {myData.contractEndDate}. Please contact your landlord immediately to renew.</p>
-          </div>
-        </div>
-      )}
-      {myData.type === 'Shop' && isExpiringSoon && (
-        <div className="bg-yellow-500 text-white p-4 rounded-xl shadow-md flex items-center gap-3">
-          <AlertTriangle className="w-6 h-6 shrink-0" />
-          <div>
-            <h3 className="font-bold">Contract Expiring Soon!</h3>
-            <p className="text-sm text-yellow-100">Your shop contract will expire in {daysLeft} days (on {myData.contractEndDate}). Please contact your landlord to discuss renewal.</p>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-gradient-to-r from-blue-700 to-sky-600 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full -mr-20 -mt-20"></div>
-        <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold tracking-tight">Welcome back, {myData.name}!</h1>
-          <p className="text-blue-100 mt-2 text-lg">Here is the overview of your rental account.</p>
-        </div>
-      </div>
-
-      {/* Top Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-white dark:bg-gray-950 shadow-sm border-gray-100 dark:border-gray-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Dues</CardTitle>
-            <AlertCircle className={`h-5 w-5 ${totalDueAmount > 0 ? 'text-red-500' : 'text-green-500'}`} />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-3xl font-bold ${totalDueAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              ৳ {totalDueAmount.toLocaleString()}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {totalDueAmount === 0 ? 'All caught up!' : 'Please clear your dues'}
+            <h3 className="font-extrabold text-xl tracking-tight">{isExpired ? 'Contract Expired!' : 'Contract Expiring Soon!'}</h3>
+            <p className="font-medium text-white/90">
+              {isExpired 
+                ? `Your shop contract ended on ${myData.contractEndDate}. Please contact your landlord immediately.`
+                : `Your shop contract will expire in ${daysLeft} days (on ${myData.contractEndDate}). Contact landlord to renew.`}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      )}
+
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-900 via-indigo-950 to-sky-900 p-8 sm:p-12 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-sky-500/20 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-72 h-72 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none"></div>
         
-        <Card className="bg-white dark:bg-gray-950 shadow-sm border-gray-100 dark:border-gray-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Rent</CardTitle>
-            <CreditCard className="h-5 w-5 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">৳ {(myData.rent || 0).toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">Room {myData.room}, {myData.building}</p>
+        <div className="relative z-10">
+          <p className="text-sky-200 text-sm font-bold uppercase tracking-widest mb-2">Tenant Portal</p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight">Welcome back, {myData.name}!</h1>
+          <p className="text-sky-100 mt-3 text-lg font-medium max-w-xl">Overview of your rental account, payment history, and security settings.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="rounded-3xl border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden relative group">
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${totalDueAmount > 0 ? 'from-red-500/5 to-orange-500/5' : 'from-emerald-500/5 to-teal-500/5'}`}></div>
+          <CardContent className="p-8 flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Dues</p>
+              <h2 className={`text-4xl font-black tracking-tighter ${totalDueAmount > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                ৳ {totalDueAmount.toLocaleString()}
+              </h2>
+              <p className="text-xs font-medium mt-2 text-gray-400">{totalDueAmount === 0 ? 'All caught up!' : 'Please clear your dues'}</p>
+            </div>
+            <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shadow-inner ${totalDueAmount > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
+              <AlertCircle className="w-8 h-8" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-gray-950 shadow-sm border-gray-100 dark:border-gray-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Advance Paid</CardTitle>
-            <Calendar className="h-5 w-5 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">৳ {(myData.advance || 0).toLocaleString()}</div>
-            {myData.type === 'Shop' ? (
-              <p className="text-xs text-gray-500 mt-1">Contract Start: {myData.contractStartDate || 'N/A'}</p>
-            ) : (
-              <p className="text-xs text-gray-500 mt-1">Moved in: {myData.entryDate}</p>
-            )}
+        <Card className="rounded-3xl border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-sky-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <CardContent className="p-8 flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Monthly Rent</p>
+              <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">৳ {(myData.rent || 0).toLocaleString()}</h2>
+              <p className="text-xs font-medium mt-2 text-gray-400">Unit {myData.room}, {myData.building}</p>
+            </div>
+            <div className="h-16 w-16 rounded-2xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-inner">
+              <CreditCard className="w-8 h-8" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <CardContent className="p-8 flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Advance Paid</p>
+              <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">৳ {(myData.advance || 0).toLocaleString()}</h2>
+              <p className="text-xs font-medium mt-2 text-gray-400">
+                {myData.type === 'Shop' ? `Start: ${myData.contractStartDate || 'N/A'}` : `Move-in: ${myData.entryDate}`}
+              </p>
+            </div>
+            <div className="h-16 w-16 rounded-2xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-inner">
+              <Calendar className="w-8 h-8" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Content Area (Bills & History) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          
-          {/* Due Bills Section */}
-          <Card className="border border-red-100 dark:border-red-900/30 shadow-md">
-            <CardHeader className="bg-red-50/50 dark:bg-red-900/10 border-b border-red-100 dark:border-red-900/30">
-              <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                Action Required: Pending Dues
+          <Card className="rounded-3xl border-0 shadow-xl bg-white dark:bg-gray-900 overflow-hidden border-t-4 border-red-500">
+            <CardHeader className="bg-red-50/50 dark:bg-red-900/10 p-8 pb-6 border-b border-red-100 dark:border-red-900/20">
+              <CardTitle className="text-xl font-bold flex items-center gap-3 text-red-700 dark:text-red-400">
+                <AlertCircle className="w-6 h-6" /> Pending Dues
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {dues.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">You have no pending dues.</div>
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">You're all caught up!</h3>
+                  <p className="text-gray-500 font-medium">No pending dues right now.</p>
+                </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Total Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dues.map(bill => (
-                      <TableRow key={bill._id}>
-                        <TableCell className="font-medium">{bill.month} {bill.year}</TableCell>
-                        <TableCell className="font-bold text-red-600">৳ {bill.dueAmount}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            bill.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
-                          }`}>
-                            {bill.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            size="sm" 
-                            className="bg-sky-600 hover:bg-sky-700 text-white"
-                            onClick={() => setSelectedBill(bill)}
-                          >
-                            Pay Now <ChevronRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
+                      <TableRow>
+                        <TableHead className="font-bold py-4">Month</TableHead>
+                        <TableHead className="font-bold py-4">Total Amount</TableHead>
+                        <TableHead className="font-bold py-4 text-right">Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {dues.map(bill => (
+                        <TableRow key={bill._id} className="hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors">
+                          <TableCell className="font-bold py-5">{bill.month} {bill.year}</TableCell>
+                          <TableCell className="font-black text-red-600 dark:text-red-400 text-lg">৳ {bill.dueAmount}</TableCell>
+                          <TableCell className="text-right">
+                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold shadow-sm ${
+                              bill.status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-orange-100 text-orange-800 border-orange-200'
+                            } border`}>
+                              {bill.status}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Payment History Table */}
-          <Card className="border border-gray-100 dark:border-gray-800 shadow-sm">
-            <CardHeader>
-              <CardTitle>Recent Payments</CardTitle>
+          <Card className="rounded-3xl border-0 shadow-xl bg-white dark:bg-gray-900 overflow-hidden">
+            <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-8 pb-6 border-b border-gray-100 dark:border-gray-800">
+              <CardTitle className="text-xl font-bold flex items-center gap-3">
+                <ShieldCheck className="w-6 h-6 text-indigo-500" /> Payment History
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {history.length === 0 ? (
-                 <div className="p-8 text-center text-gray-500">No payment history found.</div>
+                 <div className="p-12 text-center text-gray-500 font-medium">No payment history found.</div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Receipt</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {history.map((payment) => (
-                      <TableRow key={payment._id}>
-                        <TableCell className="font-medium">{payment.month} {payment.year}</TableCell>
-                        <TableCell className="text-sm text-gray-500">{payment.paymentDate || 'N/A'}</TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            ৳ {payment.paidAmount > 0 ? payment.paidAmount : payment.dueAmount}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {payment.status === 'Paid' ? (
-                             <span className="inline-flex items-center text-xs font-medium text-green-600">
-                               <CheckCircle2 className="w-3 h-3 mr-1" /> Paid
-                             </span>
-                          ) : (
-                             <span className="inline-flex items-center text-xs font-medium text-amber-600">
-                               <AlertCircle className="w-3 h-3 mr-1" /> Verifying
-                             </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {payment.status === 'Paid' ? (
-                            <DownloadReceiptButton payment={payment} iconOnly={true} />
-                          ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
-                          )}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-gray-50/50 dark:bg-gray-800/50">
+                      <TableRow>
+                        <TableHead className="font-bold py-4">Month</TableHead>
+                        <TableHead className="font-bold py-4">Date</TableHead>
+                        <TableHead className="font-bold py-4">Amount</TableHead>
+                        <TableHead className="font-bold py-4">Status</TableHead>
+                        <TableHead className="font-bold py-4 text-right">Receipt</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {history.map((payment) => (
+                        <TableRow key={payment._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <TableCell className="font-bold py-4">{payment.month} {payment.year}</TableCell>
+                          <TableCell className="text-sm font-medium text-gray-500">{payment.paymentDate || 'N/A'}</TableCell>
+                          <TableCell>
+                            <span className="font-black text-gray-900 dark:text-white">
+                              ৳ {payment.paidAmount > 0 ? payment.paidAmount : payment.dueAmount}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {payment.status === 'Paid' ? (
+                               <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400 shadow-sm">
+                                 <CheckCircle2 className="w-3 h-3 mr-1" /> Paid
+                               </span>
+                            ) : (
+                               <span className="inline-flex items-center text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-3 py-1 rounded-full dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400 shadow-sm">
+                                 Pending
+                               </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {payment.status === 'Paid' ? (
+                              <DownloadReceiptButton payment={payment} iconOnly={true} />
+                            ) : (
+                              <span className="text-xs text-gray-400 font-medium italic">Available after approval</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
-
         </div>
 
-        {/* Sidebar Info */}
-        <div className="space-y-8">
-          <Card className="bg-white dark:bg-gray-950 border-gray-100 shadow-sm">
-            <CardHeader>
-              <CardTitle>My Details</CardTitle>
+        <div className="space-y-8 lg:col-span-1">
+          <Card className="rounded-3xl border-0 shadow-xl bg-white dark:bg-gray-900 overflow-hidden">
+            <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-6 border-b border-gray-100 dark:border-gray-800">
+              <CardTitle className="text-lg font-bold">Property Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  <MapPin className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Property</p>
-                  <p className="text-sm text-gray-500">
-                    {myData.type === 'Shop' && myData.shopName ? `${myData.shopName} - ` : ''}{myData.room}, {myData.building}
-                  </p>
-                </div>
-              </div>
-
+            <CardContent className="p-6 space-y-6">
               {myData.type === 'Shop' && (
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <Calendar className="h-5 w-5 text-purple-600" />
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl">
+                    <Calendar className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Contract Period</p>
-                    <p className="text-sm text-gray-500 mt-1">Start: {myData.contractStartDate || 'N/A'}</p>
-                    <p className="text-sm text-gray-500">End: {myData.contractEndDate || 'N/A'}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">Contract Period</p>
+                    <p className="text-sm font-medium text-gray-500 mt-1">Start: {myData.contractStartDate || 'N/A'}</p>
+                    <p className="text-sm font-medium text-gray-500">End: {myData.contractEndDate || 'N/A'}</p>
                   </div>
                 </div>
               )}
-              
               <div className="flex items-start gap-4">
-                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <Flame className="h-5 w-5 text-orange-600" />
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 text-orange-600 rounded-xl">
+                  <Flame className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Gas Card Number</p>
-                  <p className="text-sm text-gray-500 font-mono mt-1">{myData.gasCardNo || 'N/A'}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Gas Card Number</p>
+                  <p className="text-sm font-mono font-medium text-gray-500 mt-1">{myData.gasCardNo || 'N/A'}</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-4">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                  <Zap className="h-5 w-5 text-yellow-600" />
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-xl">
+                  <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Electricity Card Number</p>
-                  <p className="text-sm text-gray-500 font-mono mt-1">{myData.electricityCardNo || 'N/A'}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Electricity Card Number</p>
+                  <p className="text-sm font-mono font-medium text-gray-500 mt-1">{myData.electricityCardNo || 'N/A'}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Security & Settings */}
-          <Card className="bg-white dark:bg-gray-950 border-gray-100 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-blue-600" />
+          <Card className="rounded-3xl border-0 shadow-xl bg-white dark:bg-gray-900 overflow-hidden">
+            <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-6 border-b border-gray-100 dark:border-gray-800">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-indigo-600" />
                 Security Settings
               </CardTitle>
-              <CardDescription>Update your login credentials.</CardDescription>
+              <CardDescription className="font-medium mt-1">Update your login credentials.</CardDescription>
             </CardHeader>
             <form onSubmit={handleUpdateCredentials}>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-5">
                 {updateMsg.text && (
-                  <div className={`p-3 rounded-md text-sm text-center ${updateMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  <div className={`p-4 rounded-xl text-sm font-bold flex items-center gap-2 ${updateMsg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                    {updateMsg.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                     {updateMsg.text}
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="newId">New Login ID</Label>
+                  <Label htmlFor="newId" className="text-xs uppercase tracking-widest font-bold text-gray-500">New Login ID</Label>
                   <Input 
                     id="newId" 
+                    className="h-12 bg-gray-50/50 dark:bg-gray-950 border-gray-200 dark:border-gray-800 rounded-xl font-medium focus-visible:ring-indigo-500"
                     placeholder="e.g. mahtab123" 
                     value={newLoginId} 
                     onChange={(e) => setNewLoginId(e.target.value)} 
@@ -402,10 +344,11 @@ export default function TenantDashboard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword" className="text-xs uppercase tracking-widest font-bold text-gray-500">New Password</Label>
                   <Input 
                     id="newPassword" 
                     type="password"
+                    className="h-12 bg-gray-50/50 dark:bg-gray-950 border-gray-200 dark:border-gray-800 rounded-xl font-medium focus-visible:ring-indigo-500"
                     placeholder="Enter new password" 
                     value={newPassword} 
                     onChange={(e) => setNewPassword(e.target.value)} 
@@ -413,79 +356,15 @@ export default function TenantDashboard() {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isUpdating} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <div className="p-6 pt-0">
+                <Button type="submit" disabled={isUpdating} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg font-bold tracking-wide">
                   {isUpdating ? 'Updating...' : 'Save Changes'}
                 </Button>
-              </CardFooter>
+              </div>
             </form>
           </Card>
         </div>
       </div>
-
-      {/* Submit Bill Dialog */}
-      <Dialog open={!!selectedBill} onOpenChange={(open) => !open && setSelectedBill(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Submit Bill Payment</DialogTitle>
-            <DialogDescription>
-              Submit your payment details for {selectedBill?.month} {selectedBill?.year}. The landlord will verify and approve it.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedBill && (
-            <div className="grid gap-4 py-4">
-              <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Rent Amount:</span>
-                  <span className="font-medium">৳ {selectedBill.rentAmount}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Gas Bill:</span>
-                  <span className="font-medium">৳ {selectedBill.gasAmount}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Electricity Bill:</span>
-                  <span className="font-medium">৳ {selectedBill.electricityAmount}</span>
-                </div>
-                <div className="pt-2 border-t flex justify-between font-bold">
-                  <span>Total Amount Due:</span>
-                  <span className="text-red-600">৳ {selectedBill.dueAmount}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <select 
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-gray-800 dark:bg-gray-950"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                >
-                  <option value="bKash">bKash</option>
-                  <option value="Bank">Bank Transfer</option>
-                  <option value="Cash">Cash</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Payment Date</Label>
-                <Input 
-                  type="date"
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedBill(null)}>Cancel</Button>
-            <Button onClick={handleSubmitBill} disabled={isSubmittingBill} className="bg-sky-600 hover:bg-sky-700 text-white">
-              {isSubmittingBill ? 'Submitting...' : 'Submit Payment'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
