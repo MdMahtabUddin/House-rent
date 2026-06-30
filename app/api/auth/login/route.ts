@@ -75,8 +75,9 @@ export async function POST(req: Request) {
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage = process.env.NODE_ENV === 'development' ? error.message : 'Internal Server Error. Please check Database Connection or Vercel Environment Variables.';
+    return NextResponse.json({ error: errorMessage, details: error.message }, { status: 500 });
   }
 }
