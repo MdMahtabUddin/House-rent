@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import os from 'os';
 import { getSession } from '@/lib/auth';
+import User from '@/models/User';
+import Tenant from '@/models/Tenant';
+import dbConnect from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +25,17 @@ export async function GET(request: Request) {
     const dbStatus = mongoose.connection.readyState;
     const dbStates = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
 
+    await dbConnect();
+    
+    let totalLandlords = 0;
+    let totalTenants = 0;
+    try {
+      totalLandlords = await User.countDocuments({ role: 'landlord' });
+      totalTenants = await Tenant.countDocuments();
+    } catch (e) {
+      // ignore
+    }
+
     const metrics = {
       osMemory: {
         total: totalMem,
@@ -39,11 +53,15 @@ export async function GET(request: Request) {
         status: dbStates[dbStatus] || 'Unknown',
         host: mongoose.connection.host || 'N/A',
         name: mongoose.connection.name || 'N/A',
+        totalLandlords,
+        totalTenants
       },
       system: {
         uptime: os.uptime(),
         platform: os.platform(),
         cpus: os.cpus().length,
+        loadAvg: os.loadavg(),
+        nodeUptime: process.uptime()
       }
     };
 

@@ -188,7 +188,9 @@ export default function SystemMonitor() {
               <div className="space-y-3">
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Status:</span> <span className={`font-medium ${metrics?.database?.status === 'Connected' ? 'text-emerald-600' : 'text-rose-600'}`}>{metrics?.database?.status}</span></div>
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Host:</span> <span className="font-mono font-medium">{metrics?.database?.host}</span></div>
-                <div className="flex justify-between pb-2"><span className="text-gray-500">Database Name:</span> <span className="font-mono font-medium">{metrics?.database?.name}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Database Name:</span> <span className="font-mono font-medium">{metrics?.database?.name}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Total Landlords:</span> <span className="font-mono font-medium text-blue-600">{metrics?.database?.totalLandlords || 0}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">Total Tenants:</span> <span className="font-mono font-medium text-orange-600">{metrics?.database?.totalTenants || 0}</span></div>
               </div>
             )}
             {detailsModal === 'node' && (
@@ -196,14 +198,16 @@ export default function SystemMonitor() {
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">RSS (Resident Set Size):</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.rss)}</span></div>
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Heap Total:</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.heapTotal)}</span></div>
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Heap Used:</span> <span className="font-mono font-medium text-blue-600">{formatBytes(metrics?.nodeMemory?.heapUsed)}</span></div>
-                <div className="flex justify-between pb-2"><span className="text-gray-500">External V8 Memory:</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.external)}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">External V8 Memory:</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.external)}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">Node Process Uptime:</span> <span className="font-mono font-medium">{Math.floor((metrics?.system?.nodeUptime || 0) / 3600)}h {Math.floor(((metrics?.system?.nodeUptime || 0) % 3600) / 60)}m {Math.floor((metrics?.system?.nodeUptime || 0) % 60)}s</span></div>
               </div>
             )}
             {detailsModal === 'system' && (
               <div className="space-y-3">
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Platform:</span> <span className="font-mono font-medium uppercase">{metrics?.system?.platform}</span></div>
                 <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">CPU Cores:</span> <span className="font-mono font-medium">{metrics?.system?.cpus} Cores</span></div>
-                <div className="flex justify-between pb-2"><span className="text-gray-500">Server Uptime:</span> <span className="font-mono font-medium">{Math.floor((metrics?.system?.uptime || 0) / 3600)} hours, {Math.floor(((metrics?.system?.uptime || 0) % 3600) / 60)} mins</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">CPU Load (1m, 5m, 15m):</span> <span className="font-mono font-medium">{metrics?.system?.loadAvg?.map((l: number) => l.toFixed(2)).join(', ') || 'N/A'}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">Server OS Uptime:</span> <span className="font-mono font-medium">{Math.floor((metrics?.system?.uptime || 0) / 3600)} hours, {Math.floor(((metrics?.system?.uptime || 0) % 3600) / 60)} mins</span></div>
               </div>
             )}
           </div>
