@@ -114,7 +114,7 @@ export default function MaintenancePage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-700 dark:text-gray-300">Issue Type</Label>
-                    <Select value={newReq.type} onValueChange={(v) => setNewReq({...newReq, type: v})}>
+                    <Select value={newReq.type} onValueChange={(v) => setNewReq({...newReq, type: v || ''})}>
                       <SelectTrigger className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 font-medium">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
@@ -129,7 +129,7 @@ export default function MaintenancePage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-700 dark:text-gray-300">Priority Level</Label>
-                    <Select value={newReq.priority} onValueChange={(v) => setNewReq({...newReq, priority: v})}>
+                    <Select value={newReq.priority} onValueChange={(v) => setNewReq({...newReq, priority: v || ''})}>
                       <SelectTrigger className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 font-medium">
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
@@ -213,7 +213,7 @@ export default function MaintenancePage() {
             <CardFooter className="p-6 pt-4 border-t border-gray-50 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/20 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500">{req.date}</span>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger>
                   <Button variant="outline" size="sm" className="rounded-xl font-bold h-9">
                     Update Status
                   </Button>

@@ -22,6 +22,7 @@ import {
   DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu'
 import { PlusCircle, Search, Filter, FileText, Trash2, Edit } from 'lucide-react'
 import { usePropertyType } from '@/components/PropertyTypeContext'
 import { useState, useEffect } from 'react'

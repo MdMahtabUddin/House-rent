@@ -63,8 +63,13 @@ export default function LoginPage() {
           <div className="p-4 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md rounded-2xl shadow-xl ring-1 ring-white/20">
             <Building2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
-            MY Manager
+          <h1 className="flex flex-col items-center justify-center">
+            <span className="text-6xl sm:text-7xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 drop-shadow-sm mb-1">
+              Aamar
+            </span>
+            <span className="text-xl sm:text-2xl font-bold tracking-[0.2em] text-indigo-900/60 dark:text-indigo-100/50 uppercase">
+              Manager
+            </span>
           </h1>
           <p className="text-gray-600 dark:text-gray-300 font-medium text-center px-4">
             {loginType === 'landlord' ? 'Sign in to your property dashboard' : 'Sign in to your tenant portal'}

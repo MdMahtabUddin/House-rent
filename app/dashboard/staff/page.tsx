@@ -95,7 +95,7 @@ export default function StaffPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-700 dark:text-gray-300">Role/Designation</Label>
-                    <Select value={newStaff.role} onValueChange={(v) => setNewStaff({...newStaff, role: v})}>
+                    <Select value={newStaff.role} onValueChange={(v) => setNewStaff({...newStaff, role: v || ''})}>
                       <SelectTrigger className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 font-medium">
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>

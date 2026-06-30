@@ -21,7 +21,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { propertyType, setPropertyType, userAccess } = usePropertyType()
 
   // Determine which nav items to show based on the active module (propertyType)
-  let activeNavItems = []
+  let activeNavItems: any[] = []
   
   if (propertyType === 'House' || propertyType === 'Shop') {
     activeNavItems = [

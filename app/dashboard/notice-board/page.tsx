@@ -110,7 +110,7 @@ export default function NoticeBoardPage() {
                 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-700 dark:text-gray-300">Priority Level</Label>
-                  <Select value={newNotice.type} onValueChange={(v) => setNewNotice({...newNotice, type: v})}>
+                  <Select value={newNotice.type} onValueChange={(v) => setNewNotice({...newNotice, type: v || ''})}>
                     <SelectTrigger className="h-12 rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 font-medium">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
