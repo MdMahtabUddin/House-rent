@@ -15,9 +15,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import SystemMonitor from '@/components/admin/SystemMonitor';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'landlords' | 'monitor'>('landlords');
   const [landlords, setLandlords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -157,7 +159,33 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-px mb-8">
+        <button
+          onClick={() => setActiveTab('landlords')}
+          className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 ${
+            activeTab === 'landlords'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Landlords Management
+        </button>
+        <button
+          onClick={() => setActiveTab('monitor')}
+          className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'monitor'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          <Activity className="w-4 h-4" /> System Monitor
+        </button>
+      </div>
+
+      {activeTab === 'monitor' && <SystemMonitor />}
+
+      {activeTab === 'landlords' && ( <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -522,14 +550,15 @@ export default function AdminDashboardPage() {
             </div>
           )}
           <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
-            <Button variant="outline" className="rounded-xl border-gray-200" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-6">
-              Save Changes
-            </Button>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleUpdate} className="bg-indigo-600 hover:bg-indigo-700 text-white">Save Changes</Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 }
-
