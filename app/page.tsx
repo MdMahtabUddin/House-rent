@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Building2, User } from 'lucide-react'
+import { Pacifico } from 'next/font/google'
+
+const pacifico = Pacifico({ weight: '400', subsets: ['latin'] })
 
 export default function LoginPage() {
   const router = useRouter()
@@ -59,19 +62,25 @@ export default function LoginPage() {
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-400/20 dark:bg-indigo-600/20 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 mix-blend-multiply dark:mix-blend-screen"></div>
 
       <div className="max-w-md w-full space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-500">
-        <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="p-4 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md rounded-2xl shadow-xl ring-1 ring-white/20">
-            <Building2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+        <div className="flex flex-col items-center justify-center space-y-4 mb-2">
+          <div className="relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl shadow-xl shadow-indigo-500/30 ring-4 ring-white/50 dark:ring-gray-900/50 group hover:scale-105 transition-transform duration-300">
+            <Building2 className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-pink-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse"></div>
           </div>
-          <h1 className="flex flex-col items-center justify-center">
-            <span className="text-6xl sm:text-7xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 drop-shadow-sm mb-1">
+          
+          <div className="flex flex-col items-center justify-center -space-y-1">
+            <h1 className={`text-6xl sm:text-7xl font-normal tracking-normal bg-clip-text text-transparent bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 drop-shadow-md pb-2 ${pacifico.className}`}>
               Aamar
-            </span>
-            <span className="text-xl sm:text-2xl font-bold tracking-[0.2em] text-indigo-900/60 dark:text-indigo-100/50 uppercase">
-              Manager
-            </span>
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 font-medium text-center px-4">
+            </h1>
+            <div className="flex items-center gap-3">
+              <div className="h-[2px] w-8 bg-indigo-200 dark:bg-indigo-900/60 rounded-full"></div>
+              <span className="text-sm sm:text-base font-black tracking-[0.4em] text-indigo-900/60 dark:text-indigo-200/40 uppercase">
+                Manager
+              </span>
+              <div className="h-[2px] w-8 bg-indigo-200 dark:bg-indigo-900/60 rounded-full"></div>
+            </div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 font-medium text-center px-4 mt-2">
             {loginType === 'landlord' ? 'Sign in to your property dashboard' : 'Sign in to your tenant portal'}
           </p>
         </div>
