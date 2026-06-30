@@ -55,7 +55,7 @@ export default function SystemMonitor() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Memory Card */}
-        <Card className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900">
+        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
@@ -77,7 +77,7 @@ export default function SystemMonitor() {
         </Card>
 
         {/* Database Card */}
-        <Card className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900">
+        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
@@ -94,7 +94,7 @@ export default function SystemMonitor() {
         </Card>
 
         {/* Node Process Card */}
-        <Card className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900">
+        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
@@ -108,7 +108,7 @@ export default function SystemMonitor() {
         </Card>
 
         {/* System Uptime */}
-        <Card className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900">
+        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl text-orange-600 dark:text-orange-400">
