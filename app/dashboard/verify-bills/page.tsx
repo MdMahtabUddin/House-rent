@@ -38,9 +38,32 @@ export default function VerifyBillsPage() {
     tenantId: '',
     month: '',
     year: new Date().getFullYear(),
-    gasAmount: 0,
-    electricityAmount: 0,
+    additionalBills: [] as {name: string, amount: number}[]
   })
+
+  const availableBills = ['Gas', 'Electricity', 'Water', 'Service Charge', 'Internet', 'Other']
+
+  const toggleBill = (billName: string) => {
+    const exists = newBill.additionalBills.find(b => b.name === billName)
+    if (exists) {
+      setNewBill({
+        ...newBill,
+        additionalBills: newBill.additionalBills.filter(b => b.name !== billName)
+      })
+    } else {
+      setNewBill({
+        ...newBill,
+        additionalBills: [...newBill.additionalBills, { name: billName, amount: 0 }]
+      })
+    }
+  }
+
+  const updateBillAmount = (billName: string, amount: number) => {
+    setNewBill({
+      ...newBill,
+      additionalBills: newBill.additionalBills.map(b => b.name === billName ? { ...b, amount } : b)
+    })
+  }
 
   const fetchData = async () => {
     try {
@@ -68,6 +91,11 @@ export default function VerifyBillsPage() {
     const t = tenants.find(x => x._id === newBill.tenantId)
     if (!t) return
 
+    const totalAdditional = newBill.additionalBills.reduce((acc, curr) => acc + curr.amount, 0)
+    // Map Gas and Electricity to their specific fields for backwards compatibility
+    const gasAmount = newBill.additionalBills.find(b => b.name === 'Gas')?.amount || 0
+    const electricityAmount = newBill.additionalBills.find(b => b.name === 'Electricity')?.amount || 0
+
     try {
       const res = await fetch('/api/payments', {
         method: 'POST',
@@ -81,10 +109,11 @@ export default function VerifyBillsPage() {
           month: newBill.month,
           year: newBill.year,
           rentAmount: t.rent || 0,
-          gasAmount: newBill.gasAmount,
-          electricityAmount: newBill.electricityAmount,
+          gasAmount,
+          electricityAmount,
+          additionalBills: newBill.additionalBills,
           paidAmount: 0,
-          dueAmount: (t.rent || 0) + newBill.gasAmount + newBill.electricityAmount,
+          dueAmount: (t.rent || 0) + totalAdditional,
           status: 'Due',
         })
       })
@@ -92,8 +121,7 @@ export default function VerifyBillsPage() {
         setNewBill({
           ...newBill,
           tenantId: '',
-          gasAmount: 0,
-          electricityAmount: 0,
+          additionalBills: [],
         })
         fetchData()
         alert('Utility bill added successfully!')
@@ -148,11 +176,11 @@ export default function VerifyBillsPage() {
                 Generate Monthly Bill
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[450px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-xl">Generate Monthly Bill</DialogTitle>
                 <DialogDescription>
-                  Create a new bill for a tenant including rent and utilities.
+                  Create a new bill for a tenant including rent and specific utilities.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-5 py-4">
@@ -182,26 +210,48 @@ export default function VerifyBillsPage() {
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Gas Bill (৳)</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="0"
-                      value={newBill.gasAmount}
-                      onChange={(e) => setNewBill({...newBill, gasAmount: parseInt(e.target.value) || 0})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Electricity Bill (৳)</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="0"
-                      value={newBill.electricityAmount}
-                      onChange={(e) => setNewBill({...newBill, electricityAmount: parseInt(e.target.value) || 0})}
-                    />
+                
+                <div className="space-y-3 pt-2">
+                  <Label className="text-sky-600 dark:text-sky-400 font-bold">Add Additional Bills</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableBills.map(billName => {
+                      const isSelected = newBill.additionalBills.some(b => b.name === billName)
+                      return (
+                        <button
+                          key={billName}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                            isSelected 
+                              ? 'bg-sky-100 border-sky-300 text-sky-800 dark:bg-sky-900/40 dark:border-sky-700 dark:text-sky-300' 
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-900'
+                          }`}
+                          onClick={() => toggleBill(billName)}
+                        >
+                          {isSelected ? '✓ ' : '+ '} {billName}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
+
+                {newBill.additionalBills.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800 space-y-3 mt-2">
+                    <Label className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2 block">Bill Amounts (৳)</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      {newBill.additionalBills.map(bill => (
+                        <div key={bill.name} className="space-y-1">
+                          <Label className="text-xs text-gray-600 dark:text-gray-300">{bill.name}</Label>
+                          <Input 
+                            type="number" 
+                            className="h-9"
+                            placeholder="Amount"
+                            value={bill.amount || ''}
+                            onChange={(e) => updateBillAmount(bill.name, parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <DialogClose asChild>
@@ -263,7 +313,12 @@ export default function VerifyBillsPage() {
                       </TableCell>
                       <TableCell>{bill.month} {bill.year}</TableCell>
                       <TableCell className="font-semibold text-green-600">৳ {bill.paidAmount}</TableCell>
-                      <TableCell>{bill.paymentMethod}</TableCell>
+                      <TableCell>
+                        <div className="font-semibold">{bill.paymentMethod}</div>
+                        {bill.paymentMethod === 'Cash' && bill.paidTo && (
+                          <div className="text-xs text-orange-600 font-medium">To: {bill.paidTo}</div>
+                        )}
+                      </TableCell>
                       <TableCell>{bill.paymentDate}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

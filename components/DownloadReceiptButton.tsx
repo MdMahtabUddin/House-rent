@@ -43,12 +43,27 @@ export function DownloadReceiptButton({ payment, className = '', iconOnly = fals
     doc.text(`Status: ${payment.status}`, 140, 75)
 
     // Table
-    const tableData = [
-      ['Rent Amount', `Tk ${payment.rentAmount}`],
-      ['Gas Bill', `Tk ${payment.gasAmount}`],
-      ['Electricity Bill', `Tk ${payment.electricityAmount}`],
-      ['Total Paid', `Tk ${payment.paidAmount > 0 ? payment.paidAmount : payment.dueAmount}`],
+    const tableData: any[][] = [
+      ['Rent Amount', `Tk ${payment.rentAmount || 0}`]
     ]
+
+    // Backwards compatibility handling
+    let gasAmt = payment.gasAmount || 0;
+    let elecAmt = payment.electricityAmount || 0;
+    if (payment.additionalBills && payment.additionalBills.some((b: any) => b.name === 'Gas')) gasAmt = 0;
+    if (payment.additionalBills && payment.additionalBills.some((b: any) => b.name === 'Electricity')) elecAmt = 0;
+
+    if (gasAmt > 0) tableData.push(['Gas Bill', `Tk ${gasAmt}`])
+    if (elecAmt > 0) tableData.push(['Electricity Bill', `Tk ${elecAmt}`])
+
+    // Dynamic additional bills
+    if (payment.additionalBills && payment.additionalBills.length > 0) {
+      payment.additionalBills.forEach((bill: any) => {
+        tableData.push([bill.name, `Tk ${Number(bill.amount) || 0}`])
+      })
+    }
+    
+    tableData.push(['Total Paid', `Tk ${payment.paidAmount > 0 ? payment.paidAmount : payment.dueAmount}`])
 
     // @ts-ignore
     doc.autoTable({

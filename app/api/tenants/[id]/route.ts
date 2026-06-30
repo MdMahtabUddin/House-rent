@@ -9,7 +9,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session || session.role !== 'landlord') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session || (session.role !== 'admin' && session.role !== 'landlord')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await dbConnect();
     const { id } = await params;
@@ -29,7 +29,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getSession();
-    if (!session || session.role !== 'landlord') {
+    if (!session || (session.role !== 'admin' && session.role !== 'landlord')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -71,7 +71,7 @@ export async function PUT(
 ) {
   try {
     const session = await getSession();
-    if (!session || session.role !== 'landlord') {
+    if (!session || (session.role !== 'admin' && session.role !== 'landlord')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -22,9 +22,6 @@ export default function TenantLayout({
             <Link href="/tenant-portal" className="text-gray-600 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400">
               Dashboard
             </Link>
-            <Link href="/tenant-portal/submit-bill" className="text-gray-600 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400">
-              Submit Bill
-            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">

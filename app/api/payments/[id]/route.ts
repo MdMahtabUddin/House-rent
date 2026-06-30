@@ -9,7 +9,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session || session.role !== 'admin') {
+    if (!session || (session.role !== 'admin' && session.role !== 'landlord')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -58,6 +58,9 @@ export async function PUT(
       payment.status = 'Pending';
       payment.paymentDate = body.paymentDate || new Date().toISOString().split('T')[0];
       payment.paymentMethod = body.paymentMethod || 'Cash';
+      if (payment.paymentMethod === 'Cash' && body.paidTo) {
+        payment.paidTo = body.paidTo;
+      }
       // Assume they pay full amount when submitting
       payment.paidAmount = payment.dueAmount;
     } else {

@@ -75,20 +75,30 @@ export default function BuildingsPage() {
 
   const handleDelete = async (id: string) => {
     if(confirm('Are you sure you want to delete this building?')) {
+      alert("Deleting ID: " + id);
       try {
         const res = await fetch(`/api/buildings/${id}`, { method: 'DELETE' })
+        alert("Delete response status: " + res.status);
         if (res.ok) {
           fetchBuildings()
+        } else {
+          const errData = await res.json();
+          alert("Delete error: " + errData.error);
         }
       } catch (error) {
+        alert("Delete exception: " + error);
         console.error('Failed to delete building:', error)
       }
     }
   }
 
   const handleUpdateBuilding = async () => {
-    if (!editingBuilding || !editingBuilding.name) return
+    if (!editingBuilding || !editingBuilding.name) {
+      alert("Missing editingBuilding or name");
+      return;
+    }
     
+    alert("Updating ID: " + editingBuilding._id);
     try {
       const res = await fetch(`/api/buildings/${editingBuilding._id}`, {
         method: 'PUT',
@@ -100,12 +110,17 @@ export default function BuildingsPage() {
         })
       })
       
+      alert("Update response status: " + res.status);
       if (res.ok) {
         setEditingBuilding(null)
         setIsEditDialogOpen(false)
         fetchBuildings()
+      } else {
+        const errData = await res.json();
+        alert("Update error: " + errData.error);
       }
     } catch (error) {
+      alert("Update exception: " + error);
       console.error('Failed to update building:', error)
     }
   }
@@ -191,7 +206,7 @@ export default function BuildingsPage() {
           <Card key={building._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 translate-y-2 group-hover:translate-y-0">
+            <div className="absolute top-4 right-4 flex gap-2 z-20">
               <Button 
                 variant="secondary" 
                 size="icon" 

@@ -13,7 +13,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar, CreditCard, Flame, Zap, AlertCircle, KeyRound, CheckCircle2, XCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Calendar, CreditCard, Flame, Zap, AlertCircle, KeyRound, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, Check } from 'lucide-react'
 import { DownloadReceiptButton } from '@/components/DownloadReceiptButton'
 
 export default function TenantDashboard() {
@@ -24,6 +32,12 @@ export default function TenantDashboard() {
   const [newPassword, setNewPassword] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [updateMsg, setUpdateMsg] = useState({ type: '', text: '' })
+
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false)
+  const [selectedBill, setSelectedBill] = useState<any>(null)
+  const [paymentMethod, setPaymentMethod] = useState('bKash')
+  const [paidTo, setPaidTo] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -71,6 +85,33 @@ export default function TenantDashboard() {
       setUpdateMsg({ type: 'error', text: 'An error occurred' })
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleSubmitPayment = async () => {
+    if (!selectedBill) return
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/payments/${selectedBill._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentMethod,
+          paidTo: paymentMethod === 'Cash' ? paidTo : undefined
+        })
+      })
+      if (res.ok) {
+        setIsPayModalOpen(false)
+        setSelectedBill(null)
+        setPaidTo('')
+        fetchData()
+        alert('Payment submitted for verification!')
+      }
+    } catch (error) {
+      console.error('Failed to submit payment', error)
+      alert('Failed to submit payment')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -203,11 +244,21 @@ export default function TenantDashboard() {
                           <TableCell className="font-bold py-5">{bill.month} {bill.year}</TableCell>
                           <TableCell className="font-black text-red-600 dark:text-red-400 text-lg">৳ {bill.dueAmount}</TableCell>
                           <TableCell className="text-right">
-                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold shadow-sm ${
-                              bill.status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-orange-100 text-orange-800 border-orange-200'
-                            } border`}>
-                              {bill.status}
-                            </span>
+                            <button
+                              onClick={() => {
+                                setSelectedBill(bill)
+                                setIsPayModalOpen(true)
+                                setPaymentMethod('bKash')
+                                setPaidTo('')
+                              }}
+                              className={`inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer ${
+                                bill.status === 'Rejected' 
+                                  ? 'bg-red-500 text-white hover:bg-red-600 border-transparent' 
+                                  : 'bg-orange-500 text-white hover:bg-orange-600 border-transparent'
+                              } border`}
+                            >
+                              Pay Now
+                            </button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -365,6 +416,83 @@ export default function TenantDashboard() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={isPayModalOpen} onOpenChange={setIsPayModalOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-indigo-900 dark:text-indigo-400">Pay Bill</DialogTitle>
+            <DialogDescription>Select your payment method to clear dues.</DialogDescription>
+          </DialogHeader>
+          {selectedBill && (
+            <div className="space-y-4 py-4">
+              <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl space-y-2">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-800">
+                  <span className="font-bold text-gray-500 uppercase tracking-widest text-xs">Total Due</span>
+                  <span className="font-black text-xl text-indigo-600 dark:text-indigo-400">৳ {selectedBill.dueAmount?.toLocaleString()}</span>
+                </div>
+                
+                <div className="pt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex justify-between"><span>Rent:</span> <span>৳ {selectedBill.rentAmount?.toLocaleString()}</span></div>
+                  {/* Legacy fields */}
+                  {(selectedBill.gasAmount > 0 && (!selectedBill.additionalBills || !selectedBill.additionalBills.some((b: any) => b.name === 'Gas'))) && (
+                    <div className="flex justify-between"><span>Gas:</span> <span>৳ {selectedBill.gasAmount?.toLocaleString()}</span></div>
+                  )}
+                  {(selectedBill.electricityAmount > 0 && (!selectedBill.additionalBills || !selectedBill.additionalBills.some((b: any) => b.name === 'Electricity'))) && (
+                    <div className="flex justify-between"><span>Electricity:</span> <span>৳ {selectedBill.electricityAmount?.toLocaleString()}</span></div>
+                  )}
+                  {/* Additional bills */}
+                  {selectedBill.additionalBills && selectedBill.additionalBills.map((bill: any) => (
+                    <div key={bill.name} className="flex justify-between"><span>{bill.name}:</span> <span>৳ {Number(bill.amount).toLocaleString()}</span></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="font-bold text-gray-700 dark:text-gray-300">Payment Method</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['bKash', 'Nagad', 'Upay', 'Visa', 'Mastercard', 'Bank', 'Cash'].map(method => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={`p-2 text-sm font-semibold rounded-lg border transition-all ${
+                        paymentMethod === method 
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' 
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-900'
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {paymentMethod === 'Cash' && (
+                <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2">
+                  <Label htmlFor="paidTo" className="font-bold text-gray-700 dark:text-gray-300">Who did you pay to?</Label>
+                  <Input 
+                    id="paidTo"
+                    placeholder="e.g. Landlord name / Manager name"
+                    value={paidTo}
+                    onChange={(e) => setPaidTo(e.target.value)}
+                    className="h-11 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800"
+                  />
+                  <p className="text-xs text-orange-500 font-medium italic">* Required for cash payments</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button 
+              onClick={handleSubmitPayment} 
+              disabled={isSubmitting || (paymentMethod === 'Cash' && !paidTo.trim())}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Now'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

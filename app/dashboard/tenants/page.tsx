@@ -49,6 +49,7 @@ export default function TenantsPage() {
   const [tenantToDelete, setTenantToDelete] = useState<{id: string, name: string} | null>(null)
   
   const [buildingsList, setBuildingsList] = useState<any[]>([])
+  const [flatsList, setFlatsList] = useState<any[]>([])
   const [newTenant, setNewTenant] = useState({
     name: '',
     phone: '',
@@ -62,8 +63,6 @@ export default function TenantsPage() {
     tradeLicense: '',
     rent: 0,
     advance: 0,
-    gasCardNo: '',
-    electricityCardNo: '',
   })
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
@@ -72,12 +71,14 @@ export default function TenantsPage() {
 
   const fetchData = async () => {
     try {
-      const [tRes, bRes] = await Promise.all([
+      const [tRes, bRes, fRes] = await Promise.all([
         fetch('/api/tenants'),
-        fetch('/api/buildings')
+        fetch('/api/buildings'),
+        fetch('/api/flats')
       ])
       if (tRes.ok) setTenantsList(await tRes.json())
       if (bRes.ok) setBuildingsList(await bRes.json())
+      if (fRes.ok) setFlatsList(await fRes.json())
     } catch (error) {
       console.error('Failed to fetch data:', error)
     } finally {
@@ -107,7 +108,7 @@ export default function TenantsPage() {
       if (res.ok) {
         setIsAddDialogOpen(false)
         setNewTenant({
-          name: '', phone: '', nid: '', entryDate: '', contractStartDate: '', contractEndDate: '', building: '', room: '', shopName: '', tradeLicense: '', rent: 0, advance: 0, gasCardNo: '', electricityCardNo: ''
+          name: '', phone: '', nid: '', entryDate: '', contractStartDate: '', contractEndDate: '', building: '', room: '', shopName: '', tradeLicense: '', rent: 0, advance: 0
         })
         fetchData()
       } else {
@@ -272,7 +273,20 @@ export default function TenantsPage() {
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">Unit</Label>
-                      <Input className="col-span-3" value={editingTenant.room || ''} onChange={e => setEditingTenant({...editingTenant, room: e.target.value})} />
+                      <select 
+                        className="col-span-3 flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                        value={editingTenant.room || ''}
+                        onChange={e => setEditingTenant({...editingTenant, room: e.target.value})}
+                        disabled={!editingTenant.building}
+                      >
+                        <option value="" disabled>Select a {isShop ? 'shop' : 'flat'}</option>
+                        {flatsList
+                          .filter(f => f.building === editingTenant.building && (isShop ? f.type === 'Shop' : (f.type === 'House' || !f.type)))
+                          .map(f => (
+                            <option key={f._id} value={f.name}>{f.name}</option>
+                          ))
+                        }
+                      </select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">Rent (৳)</Label>
@@ -327,100 +341,139 @@ export default function TenantsPage() {
                   Add Tenant
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">Add New {propertyType} Tenant</DialogTitle>
-                  <DialogDescription>
-                    Enter the tenant details below. Click save when you're done.
+              <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 rounded-3xl border-0 shadow-2xl">
+                <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-6 sm:p-8 text-white relative">
+                  <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-white/10 blur-2xl rounded-full pointer-events-none"></div>
+                  <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tight mb-2">Add New {propertyType} Tenant</DialogTitle>
+                  <DialogDescription className="text-rose-100 font-medium">
+                    Please fill out the tenant details carefully. All marked (*) fields are required.
                   </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input id="name" placeholder="Mahtab" value={newTenant.name} onChange={e => setNewTenant({...newTenant, name: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="01711-223344" value={newTenant.phone} onChange={e => setNewTenant({...newTenant, phone: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="nid">NID Number</Label>
-                      <Input id="nid" placeholder="1990123456789" value={newTenant.nid} onChange={e => setNewTenant({...newTenant, nid: e.target.value})} />
-                    </div>
-                    {isShop ? (
+                </div>
+                
+                <div className="p-6 sm:p-8 space-y-8 bg-white dark:bg-gray-950">
+                  <div className="space-y-6">
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Personal Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-2">
-                        <Label htmlFor="contractStartDate">Contract Start Date</Label>
-                        <Input id="contractStartDate" type="date" value={newTenant.contractStartDate} onChange={e => setNewTenant({...newTenant, contractStartDate: e.target.value})} />
+                        <Label htmlFor="name" className="text-sm font-bold text-gray-700 dark:text-gray-300">Full Name *</Label>
+                        <Input id="name" className="h-12 rounded-xl bg-gray-50/50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-rose-500 font-medium" placeholder="e.g. Md. Mahtab Uddin" value={newTenant.name} onChange={e => setNewTenant({...newTenant, name: e.target.value})} />
                       </div>
-                    ) : (
                       <div className="space-y-2">
-                        <Label htmlFor="entryDate">Entry Date</Label>
-                        <Input id="entryDate" type="date" value={newTenant.entryDate} onChange={e => setNewTenant({...newTenant, entryDate: e.target.value})} />
+                        <Label htmlFor="phone" className="text-sm font-bold text-gray-700 dark:text-gray-300">Phone Number</Label>
+                        <Input id="phone" className="h-12 rounded-xl bg-gray-50/50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-rose-500 font-medium" placeholder="01711-223344" value={newTenant.phone} onChange={e => setNewTenant({...newTenant, phone: e.target.value})} />
                       </div>
-                    )}
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="nid" className="text-sm font-bold text-gray-700 dark:text-gray-300">NID Number</Label>
+                        <Input id="nid" className="h-12 rounded-xl bg-gray-50/50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-rose-500 font-medium" placeholder="1990123456789" value={newTenant.nid} onChange={e => setNewTenant({...newTenant, nid: e.target.value})} />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="property">Property *</Label>
-                      <select 
-                        id="property" 
-                        className="flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 dark:border-gray-800 dark:bg-gray-950"
-                        value={newTenant.building}
-                        onChange={(e) => setNewTenant({...newTenant, building: e.target.value})}
-                      >
-                        <option value="" disabled>Select a building</option>
-                        {displayBuildings.map(b => (
-                          <option key={b.name} value={b.name}>{b.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="unit">{isShop ? 'Shop No' : 'Room No'} *</Label>
-                      <Input id="unit" placeholder={isShop ? 'e.g. Shop-12' : 'e.g. A-101'} value={newTenant.room} onChange={e => setNewTenant({...newTenant, room: e.target.value})} />
+                  <div className="space-y-6">
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Property Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="property" className="text-sm font-bold text-gray-700 dark:text-gray-300">Property / Building *</Label>
+                        <div className="relative">
+                          <select 
+                            id="property" 
+                            className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500 dark:border-gray-800 dark:bg-gray-900 appearance-none"
+                            value={newTenant.building}
+                            onChange={(e) => setNewTenant({...newTenant, building: e.target.value})}
+                          >
+                            <option value="" disabled>Select a building</option>
+                            {displayBuildings.map(b => (
+                              <option key={b.name} value={b.name}>{b.name}</option>
+                            ))}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="unit" className="text-sm font-bold text-gray-700 dark:text-gray-300">{isShop ? 'Shop No' : 'Flat No'} *</Label>
+                        <div className="relative">
+                          <select 
+                            id="unit" 
+                            className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500 dark:border-gray-800 dark:bg-gray-900 appearance-none"
+                            value={newTenant.room}
+                            onChange={(e) => {
+                              const selectedFlat = flatsList.find(f => f.name === e.target.value && f.building === newTenant.building);
+                              setNewTenant({
+                                ...newTenant, 
+                                room: e.target.value,
+                                rent: selectedFlat ? selectedFlat.rent : newTenant.rent // Auto-fill rent if available
+                              })
+                            }}
+                            disabled={!newTenant.building}
+                          >
+                            <option value="" disabled>Select a {isShop ? 'shop' : 'flat'}</option>
+                            {flatsList
+                              .filter(f => f.building === newTenant.building && (isShop ? f.type === 'Shop' : (f.type === 'House' || !f.type)))
+                              .map(f => (
+                                <option key={f._id} value={f.name}>{f.name}</option>
+                              ))
+                            }
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {isShop && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-rose-50/50 dark:bg-rose-900/10 rounded-lg border border-rose-100 dark:border-rose-800">
-                      <div className="space-y-2">
-                        <Label htmlFor="shopName">Shop Name</Label>
-                        <Input id="shopName" placeholder="Rahman Store" value={newTenant.shopName} onChange={e => setNewTenant({...newTenant, shopName: e.target.value})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="tradeLicense">Trade License No</Label>
-                        <Input id="tradeLicense" placeholder="TR-123456" value={newTenant.tradeLicense} onChange={e => setNewTenant({...newTenant, tradeLicense: e.target.value})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contractEndDate" className="text-rose-600 font-bold">Contract End Date</Label>
-                        <Input id="contractEndDate" type="date" value={newTenant.contractEndDate} onChange={e => setNewTenant({...newTenant, contractEndDate: e.target.value})} className="border-rose-300 focus-visible:ring-rose-500" />
+                    <div className="bg-rose-50/50 dark:bg-rose-900/10 rounded-2xl p-6 border border-rose-100 dark:border-rose-900/30 space-y-6">
+                      <h3 className="text-xs uppercase tracking-widest font-bold text-rose-500 dark:text-rose-400 mb-2">Shop Information</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <Label htmlFor="shopName" className="text-sm font-bold text-gray-700 dark:text-gray-300">Shop Name</Label>
+                          <Input id="shopName" className="h-12 rounded-xl bg-white dark:bg-gray-900 border-rose-200 dark:border-rose-800 focus-visible:ring-rose-500 font-medium" placeholder="Rahman Store" value={newTenant.shopName} onChange={e => setNewTenant({...newTenant, shopName: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="tradeLicense" className="text-sm font-bold text-gray-700 dark:text-gray-300">Trade License No</Label>
+                          <Input id="tradeLicense" className="h-12 rounded-xl bg-white dark:bg-gray-900 border-rose-200 dark:border-rose-800 focus-visible:ring-rose-500 font-medium" placeholder="TR-123456" value={newTenant.tradeLicense} onChange={e => setNewTenant({...newTenant, tradeLicense: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="contractStartDate" className="text-sm font-bold text-gray-700 dark:text-gray-300">Contract Start Date</Label>
+                          <Input id="contractStartDate" type="date" className="h-12 rounded-xl bg-white dark:bg-gray-900 border-rose-200 dark:border-rose-800 focus-visible:ring-rose-500 font-medium" value={newTenant.contractStartDate} onChange={e => setNewTenant({...newTenant, contractStartDate: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="contractEndDate" className="text-sm font-bold text-rose-600 dark:text-rose-400">Contract End Date</Label>
+                          <Input id="contractEndDate" type="date" className="h-12 rounded-xl bg-white dark:bg-gray-900 border-rose-300 dark:border-rose-700 focus-visible:ring-rose-500 font-medium text-rose-700 dark:text-rose-400" value={newTenant.contractEndDate} onChange={e => setNewTenant({...newTenant, contractEndDate: e.target.value})} />
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="rent">Monthly Rent (৳)</Label>
-                      <Input id="rent" type="number" placeholder="15000" value={newTenant.rent || ''} onChange={e => setNewTenant({...newTenant, rent: Number(e.target.value)})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="advance">Advance Payment (৳)</Label>
-                      <Input id="advance" type="number" placeholder="30000" value={newTenant.advance || ''} onChange={e => setNewTenant({...newTenant, advance: Number(e.target.value)})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="gasCard">Gas Card No (Optional)</Label>
-                      <Input id="gasCard" placeholder="G-123456" value={newTenant.gasCardNo} onChange={e => setNewTenant({...newTenant, gasCardNo: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="electricityCard">Electricity Card No (Optional)</Label>
-                      <Input id="electricityCard" placeholder="E-123456" value={newTenant.electricityCardNo} onChange={e => setNewTenant({...newTenant, electricityCardNo: e.target.value})} />
+                  <div className="space-y-6">
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Financial Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="rent" className="text-sm font-bold text-gray-700 dark:text-gray-300">Monthly Rent (৳)</Label>
+                        <Input id="rent" type="number" className="h-12 rounded-xl bg-gray-50/50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-rose-500 font-medium text-lg" placeholder="15000" value={newTenant.rent || ''} onChange={e => setNewTenant({...newTenant, rent: Number(e.target.value)})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="advance" className="text-sm font-bold text-gray-700 dark:text-gray-300">Advance Payment (৳)</Label>
+                        <Input id="advance" type="number" className="h-12 rounded-xl bg-gray-50/50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-rose-500 font-medium text-lg" placeholder="30000" value={newTenant.advance || ''} onChange={e => setNewTenant({...newTenant, advance: Number(e.target.value)})} />
+                      </div>
+                      {!isShop && (
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="entryDate" className="text-sm font-bold text-gray-700 dark:text-gray-300">Entry Date</Label>
+                          <Input id="entryDate" type="date" className="h-12 rounded-xl bg-gray-50/50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-rose-500 font-medium" value={newTenant.entryDate} onChange={e => setNewTenant({...newTenant, entryDate: e.target.value})} />
+                        </div>
+                      )}
                     </div>
                   </div>
+
                 </div>
-                <DialogFooter>
-                  <Button onClick={handleAddTenant} className="bg-rose-600 hover:bg-rose-700 text-white w-full">Save Tenant</Button>
-                </DialogFooter>
+                
+                <div className="p-6 sm:p-8 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+                  <Button variant="outline" className="h-12 px-6 rounded-xl font-bold" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleAddTenant} className="h-12 px-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-lg shadow-rose-500/30 transition-transform active:scale-95">Save Tenant</Button>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -459,17 +512,16 @@ export default function TenantsPage() {
                   {propertyType === 'Shop' ? (
                     <TableHead className="font-semibold">Shop Details & Contract</TableHead>
                   ) : (
-                    <TableHead className="font-semibold">Room Details</TableHead>
+                    <TableHead className="font-semibold">Flat Details</TableHead>
                   )}
                   <TableHead className="font-semibold">Financials</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right pr-6 font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {displayTenants.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-gray-500">
+                    <TableCell colSpan={5} className="h-32 text-center text-gray-500">
                       No tenants found. Add your first tenant to get started.
                     </TableCell>
                   </TableRow>
@@ -532,20 +584,6 @@ export default function TenantsPage() {
                           <div className="text-xs text-gray-500 mt-0.5 bg-gray-100 dark:bg-gray-800 inline-block px-2 py-0.5 rounded-md">
                             Adv: ৳ {tenant.advance?.toLocaleString()}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                              tenant.status === 'Paid'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-800'
-                                : tenant.status === 'Due'
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'
-                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 ring-1 ring-yellow-200 dark:ring-yellow-800'
-                            }`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${tenant.status === 'Paid' ? 'bg-green-500' : tenant.status === 'Due' ? 'bg-red-500 animate-pulse' : 'bg-yellow-500'}`}></span>
-                            {tenant.status}
-                          </span>
                         </TableCell>
                         <TableCell className="text-right pr-6">
                           <DropdownMenu>

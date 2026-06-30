@@ -177,59 +177,121 @@ export default function PaymentsPage() {
   const generateReceipt = (payment: any) => {
     const doc = new jsPDF()
     
-    // Header
-    doc.setFontSize(22)
-    doc.setTextColor(139, 92, 246) // violet-500
-    doc.text('Payment Receipt', 105, 20, { align: 'center' })
+    // Header (Building Name as Logo)
+    doc.setFontSize(28)
+    doc.setTextColor(225, 29, 72) // rose-600
+    doc.setFont('helvetica', 'bold')
+    doc.text(payment.building.toUpperCase(), 105, 25, { align: 'center' })
     
+    doc.setFontSize(12)
+    doc.setTextColor(156, 163, 175) // gray-400
+    doc.setFont('helvetica', 'normal')
+    doc.text('P A Y M E N T   R E C E I P T', 105, 34, { align: 'center' })
+    
+    // Divider
+    doc.setDrawColor(226, 232, 240) // gray-200
+    doc.setLineWidth(0.5)
+    doc.line(20, 42, 190, 42)
+    
+    // Receipt Info & Status
     doc.setFontSize(10)
-    doc.setTextColor(100)
-    doc.text(`Receipt No: ${payment._id.substring(0, 8).toUpperCase()}`, 20, 35)
-    doc.text(`Date: ${new Date(payment.paymentDate).toLocaleDateString()}`, 190, 35, { align: 'right' })
+    doc.setTextColor(107, 114, 128) // gray-500
+    doc.text(`Receipt No: #${payment._id.substring(0, 8).toUpperCase()}`, 20, 52)
+    doc.text(`Date: ${new Date(payment.paymentDate).toLocaleDateString()}`, 190, 52, { align: 'right' })
+    
+    doc.setTextColor(payment.status === 'Paid' ? 22 : payment.status === 'Due' ? 220 : 202, payment.status === 'Paid' ? 163 : payment.status === 'Due' ? 38 : 138, payment.status === 'Paid' ? 74 : payment.status === 'Due' ? 38 : 4) // Dynamic status color
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Status: ${payment.status.toUpperCase()}`, 190, 58, { align: 'right' })
     
     // Tenant Info
     doc.setFontSize(12)
-    doc.setTextColor(40)
-    doc.text('Tenant Information:', 20, 50)
-    doc.setFontSize(10)
-    doc.text(`Name: ${payment.tenantName}`, 20, 58)
-    doc.text(`Building: ${payment.building}`, 20, 64)
-    doc.text(`Room: ${payment.room}`, 20, 70)
-    doc.text(`Month: ${payment.month} ${payment.year}`, 20, 76)
+    doc.setTextColor(17, 24, 39) // gray-900
+    doc.setFont('helvetica', 'bold')
+    doc.text('Billed To:', 20, 65)
     
-    // Table
-    const totalAmount = payment.rentAmount + payment.gasAmount + payment.electricityAmount
-    const tableData = [
-      ['Rent', `BDT ${payment.rentAmount.toLocaleString()}`],
-      ['Gas', `BDT ${payment.gasAmount.toLocaleString()}`],
-      ['Electricity', `BDT ${payment.electricityAmount.toLocaleString()}`],
-      ['Total', `BDT ${totalAmount.toLocaleString()}`],
-      ['Paid Amount', `BDT ${payment.paidAmount.toLocaleString()}`],
-      ['Due Amount', `BDT ${payment.dueAmount.toLocaleString()}`]
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor(55, 65, 81) // gray-700
+    doc.text(`Name: ${payment.tenantName}`, 20, 73)
+    doc.text(`Flat/Room: ${payment.room}`, 20, 79)
+    doc.text(`Billing Month: ${payment.month} ${payment.year}`, 20, 85)
+    
+    // Table Data Calculation
+    const additionalTotal = payment.additionalBills?.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0) || 0;
+    
+    // For backwards compatibility, if there are no additionalBills but there is gas/electricity, we use them
+    let gasAmt = payment.gasAmount || 0;
+    let elecAmt = payment.electricityAmount || 0;
+    
+    // If additionalBills has Gas/Electricity, don't count the separate fields to avoid double counting
+    if (payment.additionalBills && payment.additionalBills.some((b: any) => b.name === 'Gas')) {
+      gasAmt = 0;
+    }
+    if (payment.additionalBills && payment.additionalBills.some((b: any) => b.name === 'Electricity')) {
+      elecAmt = 0;
+    }
+
+    const totalAmount = payment.rentAmount + gasAmt + elecAmt + additionalTotal
+
+    const tableData: any[][] = [
+      ['Monthly Rent', `BDT ${payment.rentAmount.toLocaleString()}`]
     ]
 
+    // Add legacy fields if they exist and aren't in additionalBills
+    if (gasAmt > 0) tableData.push(['Gas Bill', `BDT ${gasAmt.toLocaleString()}`])
+    if (elecAmt > 0) tableData.push(['Electricity Bill', `BDT ${elecAmt.toLocaleString()}`])
+    
+    // Add dynamic additional bills
+    if (payment.additionalBills && payment.additionalBills.length > 0) {
+      payment.additionalBills.forEach((bill: any) => {
+        tableData.push([bill.name, `BDT ${(Number(bill.amount) || 0).toLocaleString()}`])
+      })
+    }
+
+    tableData.push(
+      ['Total Amount', `BDT ${totalAmount.toLocaleString()}`],
+      ['Paid Amount', `BDT ${payment.paidAmount.toLocaleString()}`],
+      ['Due Amount', `BDT ${payment.dueAmount.toLocaleString()}`]
+    )
+
     autoTable(doc, {
-      startY: 85,
-      head: [['Description', 'Amount']],
+      startY: 95,
+      head: [['Description', 'Amount (BDT)']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [139, 92, 246] },
-      styles: { halign: 'left' },
-      columnStyles: { 1: { halign: 'right' } }
+      headStyles: { fillColor: [225, 29, 72], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 },
+      styles: { halign: 'left', textColor: [55, 65, 81], fontSize: 10, cellPadding: 6, lineColor: [226, 232, 240] },
+      columnStyles: { 1: { halign: 'right', fontStyle: 'bold', textColor: [17, 24, 39] } },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      willDrawCell: function(data) {
+        // Highlight total rows
+        if (data.row.index >= tableData.length - 3 && data.section === 'body') {
+          doc.setFillColor(255, 241, 242) // rose-50
+          doc.setTextColor(225, 29, 72) // rose-600
+          doc.setFont('helvetica', 'bold')
+        }
+      }
     })
     
     // Footer
     const finalY = (doc as any).lastAutoTable.finalY || 150
-    doc.setFontSize(12)
-    doc.setTextColor(40)
-    doc.text(`Status: ${payment.status}`, 20, finalY + 15)
-    doc.text(`Payment Method: ${payment.paymentMethod}`, 20, finalY + 23)
     
-    doc.setFontSize(10)
-    doc.setTextColor(150)
-    doc.text('Thank you for your payment.', 105, finalY + 40, { align: 'center' })
+    // Bottom Divider
+    doc.setDrawColor(226, 232, 240) // gray-200
+    doc.line(20, finalY + 15, 190, finalY + 15)
     
-    doc.save(`Receipt_${payment.tenantName}_${payment.month}.pdf`)
+    doc.setFontSize(11)
+    doc.setTextColor(55, 65, 81)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Payment Method:`, 20, finalY + 25)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`${payment.paymentMethod || 'Cash'}`, 55, finalY + 25)
+    
+    doc.setFontSize(9)
+    doc.setTextColor(156, 163, 175)
+    doc.text('Thank you for your payment. This is a computer-generated receipt.', 105, finalY + 40, { align: 'center' })
+    
+    doc.save(`${payment.building}_Receipt_${payment.tenantName}_${payment.month}.pdf`)
   }
 
   const [statusFilter, setStatusFilter] = useState('All')
@@ -302,7 +364,14 @@ export default function PaymentsPage() {
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">Total Due</Label>
                     <div className="col-span-3 text-sm font-semibold">
-                      ৳ {(editingPayment.rentAmount + editingPayment.gasAmount + editingPayment.electricityAmount).toLocaleString()}
+                      {(() => {
+                        const additionalTotal = editingPayment.additionalBills?.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0) || 0;
+                        let gasAmt = editingPayment.gasAmount || 0;
+                        let elecAmt = editingPayment.electricityAmount || 0;
+                        if (editingPayment.additionalBills && editingPayment.additionalBills.some((b: any) => b.name === 'Gas')) gasAmt = 0;
+                        if (editingPayment.additionalBills && editingPayment.additionalBills.some((b: any) => b.name === 'Electricity')) elecAmt = 0;
+                        return `৳ ${(editingPayment.rentAmount + gasAmt + elecAmt + additionalTotal).toLocaleString()}`
+                      })()}
                     </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -402,15 +471,44 @@ export default function PaymentsPage() {
                       <div className="text-xs text-gray-500 mt-0.5">{payment.building}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 bg-white/50 dark:bg-gray-900/50 p-2 rounded-md border border-gray-100 dark:border-gray-800 inline-block">
-                        <div className="flex justify-between w-32"><span className="font-medium">Rent:</span> <span>৳ {payment.rentAmount?.toLocaleString()}</span></div>
-                        <div className="flex justify-between w-32"><span className="font-medium">Gas:</span> <span>৳ {payment.gasAmount?.toLocaleString()}</span></div>
-                        <div className="flex justify-between w-32"><span className="font-medium">Elect:</span> <span>৳ {payment.electricityAmount?.toLocaleString()}</span></div>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 gap-2 bg-white dark:bg-gray-950 border-violet-200 dark:border-violet-900 hover:bg-violet-50 dark:hover:bg-violet-900/30 text-violet-700 dark:text-violet-300 transition-all rounded-lg">
+                            <svg className="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
+                            View Details
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56 p-4 rounded-xl shadow-2xl border-violet-100 dark:border-violet-900/50 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl">
+                          <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">Bill Breakdown</h4>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2.5">
+                            <div className="flex justify-between items-center"><span className="font-medium">Rent:</span> <span className="font-semibold text-gray-900 dark:text-gray-100">৳ {payment.rentAmount?.toLocaleString()}</span></div>
+                            
+                            {/* Show legacy fields only if they aren't in additionalBills */}
+                            {(payment.gasAmount > 0 && (!payment.additionalBills || !payment.additionalBills.some((b: any) => b.name === 'Gas'))) && (
+                              <div className="flex justify-between items-center"><span className="font-medium">Gas:</span> <span className="font-semibold text-gray-900 dark:text-gray-100">৳ {payment.gasAmount?.toLocaleString()}</span></div>
+                            )}
+                            {(payment.electricityAmount > 0 && (!payment.additionalBills || !payment.additionalBills.some((b: any) => b.name === 'Electricity'))) && (
+                              <div className="flex justify-between items-center"><span className="font-medium">Electricity:</span> <span className="font-semibold text-gray-900 dark:text-gray-100">৳ {payment.electricityAmount?.toLocaleString()}</span></div>
+                            )}
+                            
+                            {/* Dynamic Bills */}
+                            {payment.additionalBills && payment.additionalBills.map((bill: any) => (
+                              <div key={bill.name} className="flex justify-between items-center"><span className="font-medium">{bill.name}:</span> <span className="font-semibold text-gray-900 dark:text-gray-100">৳ {(Number(bill.amount) || 0).toLocaleString()}</span></div>
+                            ))}
+                          </div>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-black text-violet-600 dark:text-violet-400 tracking-tight mb-2">
-                        ৳ {(payment.rentAmount + payment.gasAmount + payment.electricityAmount).toLocaleString()}
+                        {(() => {
+                          const additionalTotal = payment.additionalBills?.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0) || 0;
+                          let gasAmt = payment.gasAmount || 0;
+                          let elecAmt = payment.electricityAmount || 0;
+                          if (payment.additionalBills && payment.additionalBills.some((b: any) => b.name === 'Gas')) gasAmt = 0;
+                          if (payment.additionalBills && payment.additionalBills.some((b: any) => b.name === 'Electricity')) elecAmt = 0;
+                          return `৳ ${(payment.rentAmount + gasAmt + elecAmt + additionalTotal).toLocaleString()}`
+                        })()}
                       </div>
                       <div className="flex flex-col gap-1 items-start">
                         <span
@@ -429,10 +527,15 @@ export default function PaymentsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{new Date(payment.paymentDate).toLocaleDateString()}</div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : 'N/A'}</div>
                       <div className="text-xs mt-1 inline-flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium border border-gray-200 dark:border-gray-700">
                         {payment.paymentMethod}
                       </div>
+                      {payment.paymentMethod === 'Cash' && payment.paidTo && (
+                        <div className="text-xs mt-1 text-orange-600 font-medium">
+                          To: {payment.paidTo}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-2">

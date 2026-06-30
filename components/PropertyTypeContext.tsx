@@ -3,11 +3,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 
-export type PropertyType = 'House' | 'Shop'
+export type PropertyType = 'House' | 'Shop' | 'Notice Board' | 'Staff' | 'Maintenance' | 'Mess'
 
 interface UserAccess {
   house: boolean
   shop: boolean
+  noticeBoard?: boolean
+  staff?: boolean
+  maintenance?: boolean
+  mess?: boolean
 }
 
 interface PropertyTypeContextType {
@@ -35,10 +39,18 @@ export function PropertyTypeProvider({ children }: { children: ReactNode }) {
           setUserAccess(access)
           
           // Set initial property type based on access
-          if (access.house && !access.shop) {
+          if (access.house) {
             setPropertyType('House')
-          } else if (!access.house && access.shop) {
+          } else if (access.shop) {
             setPropertyType('Shop')
+          } else if (access.noticeBoard) {
+            setPropertyType('Notice Board')
+          } else if (access.staff) {
+            setPropertyType('Staff')
+          } else if (access.maintenance) {
+            setPropertyType('Maintenance')
+          } else if (access.mess) {
+            setPropertyType('Mess')
           }
         } else {
           router.push('/')

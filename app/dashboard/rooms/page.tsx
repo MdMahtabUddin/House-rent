@@ -95,20 +95,30 @@ export default function RoomsPage() {
 
   const handleDelete = async (id: string) => {
     if(confirm(`Are you sure you want to delete this ${unitName.toLowerCase()}?`)) {
+      alert("Deleting Flat ID: " + id);
       try {
         const res = await fetch(`/api/flats/${id}`, { method: 'DELETE' })
+        alert("Delete response status: " + res.status);
         if (res.ok) {
           fetchData()
+        } else {
+          const errData = await res.json();
+          alert("Delete error: " + errData.error);
         }
       } catch (error) {
+        alert("Delete exception: " + error);
         console.error('Failed to delete flat:', error)
       }
     }
   }
 
   const handleUpdateFlat = async () => {
-    if (!editingFlat || !editingFlat.name || !editingFlat.building) return
+    if (!editingFlat || !editingFlat.name || !editingFlat.building) {
+      alert("Missing editingFlat data");
+      return;
+    }
     
+    alert("Updating Flat ID: " + editingFlat._id);
     try {
       const res = await fetch(`/api/flats/${editingFlat._id}`, {
         method: 'PUT',
@@ -121,12 +131,17 @@ export default function RoomsPage() {
           type: propertyType
         })
       })
+      alert("Update response status: " + res.status);
       if (res.ok) {
         setEditingFlat(null)
         setIsEditDialogOpen(false)
         fetchData()
+      } else {
+        const errData = await res.json();
+        alert("Update error: " + errData.error);
       }
     } catch (error) {
+      alert("Update exception: " + error);
       console.error('Failed to update flat:', error)
     }
   }
@@ -256,7 +271,7 @@ export default function RoomsPage() {
           <Card key={room._id} className="relative overflow-hidden rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
             <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 translate-y-2 group-hover:translate-y-0">
+            <div className="absolute top-4 right-4 flex gap-2 z-20">
               <Button 
                 variant="secondary" 
                 size="icon" 
