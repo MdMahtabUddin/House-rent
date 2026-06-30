@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Activity, Database, Server, Cpu, RefreshCw, Trash2, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Activity, Database, Server, Cpu, RefreshCw, Trash2, AlertCircle, Info } from 'lucide-react';
 
 export default function SystemMonitor() {
   const [metrics, setMetrics] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailsModal, setDetailsModal] = useState<string | null>(null);
 
   const fetchMetricsAndLogs = async () => {
     try {
@@ -55,7 +57,8 @@ export default function SystemMonitor() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Memory Card */}
-        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
+        <Card onClick={() => { fetchMetricsAndLogs(); setDetailsModal('memory'); }} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors relative group">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500"><Info className="w-4 h-4" /></div>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
@@ -77,7 +80,8 @@ export default function SystemMonitor() {
         </Card>
 
         {/* Database Card */}
-        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
+        <Card onClick={() => { fetchMetricsAndLogs(); setDetailsModal('database'); }} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors relative group">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-500"><Info className="w-4 h-4" /></div>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
@@ -94,7 +98,8 @@ export default function SystemMonitor() {
         </Card>
 
         {/* Node Process Card */}
-        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
+        <Card onClick={() => { fetchMetricsAndLogs(); setDetailsModal('node'); }} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors relative group">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-purple-500"><Info className="w-4 h-4" /></div>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
@@ -108,7 +113,8 @@ export default function SystemMonitor() {
         </Card>
 
         {/* System Uptime */}
-        <Card onClick={fetchMetricsAndLogs} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors">
+        <Card onClick={() => { fetchMetricsAndLogs(); setDetailsModal('system'); }} className="rounded-2xl border-0 shadow-lg bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors relative group">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500"><Info className="w-4 h-4" /></div>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl text-orange-600 dark:text-orange-400">
@@ -158,6 +164,54 @@ export default function SystemMonitor() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!detailsModal} onOpenChange={(open) => !open && setDetailsModal(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              {detailsModal === 'memory' && <><Server className="text-blue-500 w-5 h-5"/> Server Memory Details</>}
+              {detailsModal === 'database' && <><Database className="text-emerald-500 w-5 h-5"/> Database Connection</>}
+              {detailsModal === 'node' && <><Cpu className="text-purple-500 w-5 h-5"/> Node.js Process Details</>}
+              {detailsModal === 'system' && <><Activity className="text-orange-500 w-5 h-5"/> System & OS Info</>}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {detailsModal === 'memory' && (
+              <div className="space-y-3">
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Total Memory:</span> <span className="font-mono font-medium">{formatBytes(metrics?.osMemory?.total)}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Free Memory:</span> <span className="font-mono font-medium text-emerald-600">{formatBytes(metrics?.osMemory?.free)}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Used Memory:</span> <span className="font-mono font-medium text-rose-600">{formatBytes(metrics?.osMemory?.used)}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">Usage %:</span> <span className="font-mono font-medium">{metrics?.osMemory?.usagePercentage}%</span></div>
+              </div>
+            )}
+            {detailsModal === 'database' && (
+              <div className="space-y-3">
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Status:</span> <span className={`font-medium ${metrics?.database?.status === 'Connected' ? 'text-emerald-600' : 'text-rose-600'}`}>{metrics?.database?.status}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Host:</span> <span className="font-mono font-medium">{metrics?.database?.host}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">Database Name:</span> <span className="font-mono font-medium">{metrics?.database?.name}</span></div>
+              </div>
+            )}
+            {detailsModal === 'node' && (
+              <div className="space-y-3">
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">RSS (Resident Set Size):</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.rss)}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Heap Total:</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.heapTotal)}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Heap Used:</span> <span className="font-mono font-medium text-blue-600">{formatBytes(metrics?.nodeMemory?.heapUsed)}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">External V8 Memory:</span> <span className="font-mono font-medium">{formatBytes(metrics?.nodeMemory?.external)}</span></div>
+              </div>
+            )}
+            {detailsModal === 'system' && (
+              <div className="space-y-3">
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">Platform:</span> <span className="font-mono font-medium uppercase">{metrics?.system?.platform}</span></div>
+                <div className="flex justify-between border-b dark:border-gray-800 pb-2"><span className="text-gray-500">CPU Cores:</span> <span className="font-mono font-medium">{metrics?.system?.cpus} Cores</span></div>
+                <div className="flex justify-between pb-2"><span className="text-gray-500">Server Uptime:</span> <span className="font-mono font-medium">{Math.floor((metrics?.system?.uptime || 0) / 3600)} hours, {Math.floor(((metrics?.system?.uptime || 0) % 3600) / 60)} mins</span></div>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setDetailsModal(null)} className="bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white rounded-xl">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
