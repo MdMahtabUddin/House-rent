@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Activity, Database, Server, Cpu, RefreshCw, Trash2, AlertCircle, Info } from 'lucide-react';
+import { Activity, Database, Server, Cpu, RefreshCw, Trash2, AlertCircle, Info, Download, Pause, Play, Filter } from 'lucide-react';
 
 export default function SystemMonitor() {
   const [metrics, setMetrics] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailsModal, setDetailsModal] = useState<string | null>(null);
+  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [logFilter, setLogFilter] = useState<'all' | 'error' | 'warn'>('all');
 
   const fetchMetricsAndLogs = async () => {
     try {
@@ -30,15 +32,29 @@ export default function SystemMonitor() {
 
   useEffect(() => {
     fetchMetricsAndLogs();
-    const interval = setInterval(fetchMetricsAndLogs, 5000); // Poll every 5s
+    let interval: NodeJS.Timeout;
+    if (isAutoRefresh) {
+      interval = setInterval(fetchMetricsAndLogs, 5000); // Poll every 5s
+    }
     return () => clearInterval(interval);
-  }, []);
+  }, [isAutoRefresh]);
 
   const handleClearLogs = async () => {
     if (confirm('Clear all system logs?')) {
       await fetch('/api/system/logs', { method: 'DELETE' });
       fetchMetricsAndLogs();
     }
+  };
+
+  const handleDownloadLogs = () => {
+    const textContent = logs.map(l => `[${new Date(l.timestamp).toISOString()}] [${l.type.toUpperCase()}] ${l.message}`).join('\n');
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `server-logs-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading && !metrics) {
@@ -138,6 +154,18 @@ export default function SystemMonitor() {
             <CardTitle className="text-sm font-bold text-white tracking-widest">SERVER LOGS</CardTitle>
           </div>
           <div className="flex gap-2">
+            <div className="flex items-center gap-1 bg-slate-800 rounded-md p-1 mr-2">
+              <Button size="sm" variant="ghost" className={`h-7 px-2 text-xs ${logFilter === 'all' ? 'bg-slate-700 text-white' : 'text-slate-400'}`} onClick={() => setLogFilter('all')}>All</Button>
+              <Button size="sm" variant="ghost" className={`h-7 px-2 text-xs ${logFilter === 'error' ? 'bg-red-900/50 text-red-400' : 'text-slate-400'}`} onClick={() => setLogFilter('error')}>Errors</Button>
+              <Button size="sm" variant="ghost" className={`h-7 px-2 text-xs ${logFilter === 'warn' ? 'bg-yellow-900/50 text-yellow-400' : 'text-slate-400'}`} onClick={() => setLogFilter('warn')}>Warns</Button>
+            </div>
+            <Button size="sm" variant="ghost" className={`h-8 text-slate-400 hover:text-white hover:bg-slate-800 ${isAutoRefresh ? 'text-emerald-400' : ''}`} onClick={() => setIsAutoRefresh(!isAutoRefresh)}>
+              {isAutoRefresh ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />} 
+              Auto
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8 text-slate-400 hover:text-white hover:bg-slate-800" onClick={handleDownloadLogs}>
+              <Download className="w-4 h-4 mr-2" /> Export
+            </Button>
             <Button size="sm" variant="ghost" className="h-8 text-slate-400 hover:text-white hover:bg-slate-800" onClick={fetchMetricsAndLogs}>
               <RefreshCw className="w-4 h-4 mr-2" /> Refresh
             </Button>
@@ -151,7 +179,7 @@ export default function SystemMonitor() {
             {logs.length === 0 ? (
               <div className="text-center text-slate-600 mt-10">No recent errors or warnings recorded.</div>
             ) : (
-              logs.map((log, i) => (
+              logs.filter(log => logFilter === 'all' || log.type === logFilter).map((log, i) => (
                 <div key={i} className={`p-3 rounded-lg border ${log.type === 'error' ? 'bg-red-950/30 border-red-900/50 text-red-400' : 'bg-yellow-950/30 border-yellow-900/50 text-yellow-400'}`}>
                   <div className="flex items-center gap-2 mb-1 opacity-70">
                     <span className="font-bold uppercase">[{log.type}]</span>
