@@ -15,8 +15,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Aamar Manager | Property Management System",
   description: "A complete property and tenant management system",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Aamar Manager",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
+export const viewport = {
+  themeColor: "#0f172a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 export default function RootLayout({
   children,
 }: Readonly<{
